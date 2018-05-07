@@ -3,8 +3,6 @@ from collections import namedtuple
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import astropy.visualization as viz
 
 from .segmap import normalize_segmap, mask_out_pixels
 
@@ -158,6 +156,8 @@ class Blender:
         return blend
 
     def plot_data(self, idx: int):
+        import matplotlib.pyplot as plt
+
         _, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 8))
         axes[0].imshow(self.data[idx], origin='lower')
         axes[0].axis('off')
@@ -170,6 +170,9 @@ class Blender:
         axes[2].set_title('Single object segmentation')
 
     def plot_blend(self, idx1: int, idx2: int):
+        import matplotlib.pyplot as plt
+        import astropy.visualization as viz
+        
         g1 = self.galaxy(idx1)
         g2 = self.galaxy(idx2)
         blend = self.blend(g1, g2)
