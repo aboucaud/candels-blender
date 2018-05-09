@@ -2,11 +2,6 @@ import numpy as np
 
 from scipy.ndimage import binary_dilation
 
-__all__ = [
-    'normalize_segmap',
-    'mask_out_pixels',
-    'mask_out_pixels_2',
-]
 
 def normalize_segmap(segmap):
     new_segmap = segmap.copy()
@@ -46,3 +41,33 @@ def mask_out_pixels_2(img, segmap, segval, n_iter: int = 5):
     masked_img[sources_except_central] = noise_pixels
 
     return masked_img
+
+
+def segmap_encoding_v1(segmap, dtype=np.uint8):
+    """Convert label array to one hot encoding as defined in the UNet"""
+    segmap = segmap.astype(bool)
+    s1, s2 = segmap
+    array_list = [~s1 & ~s2,     # background
+                  s1 & s2,       # overlap
+                  s1 ^ s1 & s2,  # s1 without overlap
+                  s2 ^ s1 & s2]  # s2 without overlap
+
+    output = np.concatenate([np.expand_dims(arr, axis=-1)
+                             for arr in array_list], axis=-1)
+
+    return output.astype(dtype)
+
+
+def segmap_encoding_v2(segmap, dtype=np.uint8):
+    segmap = segmap.astype(bool)
+    s1, s2 = segmap
+    array_list = [
+        np.logical_and(s1, s2),  # overlap
+        s1,                      # galaxy 1
+        s2]                      # galaxy 2
+
+    output = np.concatenate(
+        [np.expand_dims(arr, axis=-1)
+         for arr in array_list], axis=-1)
+
+    return output.astype(dtype)
