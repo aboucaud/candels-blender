@@ -1,6 +1,6 @@
 import numpy as np
 
-from skimage.morphology import dilation
+from scipy.ndimage import binary_dilation
 
 __all__ = [
     'normalize_segmap',
@@ -16,17 +16,9 @@ def normalize_segmap(segmap):
     return new_segmap
 
 
-def _dilate_mask(segmap, pixels: int = 5):
-    bmask = np.where(segmap != 0, 1, 0).astype(bool)
-    for _ in range(pixels):
-        bmask = dilation(bmask)
-
-    return bmask
-
-
-def mask_out_pixels(img, seg, segval, noise_factor: int = 1):
-    bseg = _dilate_mask(seg)
-    centralseg = _dilate_mask(np.where(seg == segval, 1, 0))
+def mask_out_pixels(img, seg, segval, noise_factor: int = 1, n_iter: int = 5):
+    bseg = binary_dilation(seg, iterations=n_iter)
+    centralseg = binary_dilation(np.where(seg == segval, 1, 0), iterations=n_iter)
     final_mask = np.logical_xor(bseg, centralseg)
     masked_std = np.std(img * np.logical_not(bseg))
     masked_img = img * ~final_mask
@@ -37,12 +29,13 @@ def mask_out_pixels(img, seg, segval, noise_factor: int = 1):
     return new_img.astype(img.dtype)
 
 
-def mask_out_pixels_2(img, segmap, segval):
+def mask_out_pixels_2(img, segmap, segval, n_iter: int = 5):
     # Create binary masks of all segmented sources
-    sources = _dilate_mask(segmap)
+    sources = binary_dilation(segmap, iterations=n_iter)
     noise = np.logical_not(sources)
     # Create binary mask of the central galaxy
-    central_source = _dilate_mask(np.where(segmap == segval, 1, 0))
+    central_source = binary_dilation(np.where(segmap == segval, 1, 0), 
+                                     iterations=n_iter)
     # Compute the binary mask of all sources BUT the central galaxy
     sources_except_central = np.logical_xor(sources, central_source)
     # Select random pixels from the noise in the image 
