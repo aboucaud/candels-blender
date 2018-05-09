@@ -3,6 +3,7 @@ from collections import namedtuple
 
 import numpy as np
 import pandas as pd
+from numpy.random import RandomState
 
 from .segmap import normalize_segmap, mask_out_pixels
 
@@ -25,7 +26,7 @@ class Blender:
         self.cat = pd.read_csv(catpath)
         self.magdiff = magdiff
         self.raddiff = raddiff
-        self.rng = np.random.RandomState(seed=seed)
+        self.rng = RandomState(seed=seed)
         self.img_size = self.data.shape[-1]
 
     @property
