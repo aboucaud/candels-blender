@@ -1,14 +1,11 @@
 from typing import List
-from collections import namedtuple
 
 import numpy as np
 import pandas as pd
 from numpy.random import RandomState
 
+from .core import Galaxy, Blend
 from .segmap import normalize_segmap, mask_out_pixels
-
-Galaxy = namedtuple('Galaxy', 'cat_id gal_id mag rad z type')
-Blend = namedtuple('Blend', 'img segmap gal1 gal2 shift')
 
 
 class BlendShiftError(Exception):

@@ -1,1 +1,2 @@
-from .blender import Blender, Blend, Galaxy
+from .core import Blend, Galaxy
+from .blender import Blender
