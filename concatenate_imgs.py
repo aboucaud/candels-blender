@@ -4,43 +4,12 @@ import tqdm
 import click
 import numpy as np
 
+from blender import segmap
 
 IMG_TMP = 'blend_{:06d}.npy'
 SEG_TMP = 'blend_seg_{:06d}.npy'
 IMG_DTYPE = np.float32
 SEG_DTYPE = np.uint8
-
-
-def one_hot_encode(segmap):
-    """Convert label array to one hot encoding as defined in the UNet"""
-    segmap = segmap.astype(bool)
-    s1, s2 = segmap
-    array_list = [~s1 & ~s2,     # background
-                  s1 & s2,       # overlap
-                  s1 ^ s1 & s2,  # s1 without overlap
-                  s2 ^ s1 & s2]  # s2 without overlap
-
-    output = np.concatenate([np.expand_dims(arr, axis=-1)
-                             for arr in array_list], axis=2)
-
-    return output
-
-
-def new_one_hot_encode(segmap):
-    segmap = segmap.astype(bool)
-    s1, s2 = segmap
-    array_list = [
-        np.logical_and(s1, s2),
-        s1,
-        s2
-    ]
-
-    output = np.concatenate(
-        [np.expand_dims(arr, axis=-1)
-         for arr in array_list], 
-        axis=2)
-
-    return output.astype(SEG_DTYPE)
 
 
 def concatenate(path):
@@ -55,26 +24,34 @@ def concatenate(path):
     np.save(path / 'images.npy', imgmain.astype(IMG_DTYPE))
 
 
-def concatenate_seg(path, new=False):
+def concatenate_seg(path, method=None):
     n_img = len(list(path.glob('blend_seg*npy')))
 
-    method = one_hot_encode
-    if new:
-        method = new_one_hot_encode
+    method = method or segmap_identity
+
+    if isinstance(method, str):
+        method = getattr(segmap, method)
 
     img0 = method(np.load(path / SEG_TMP.format(0)))
     imgmain = np.empty((n_img, *img0.shape), dtype=img0.dtype)
 
     for idx in tqdm.trange(n_img):
         seg = np.load(path / SEG_TMP.format(idx))
-        imgmain[idx] = new_one_hot_encode(seg)
+        imgmain[idx] = method(seg)
 
     np.save(path / 'labels.npy', imgmain.astype(SEG_DTYPE))
 
 
+def segmap_identity(array):
+    return array.astype(SEG_DTYPE)
+
+
 @click.command()
 @click.argument('image_dir')
-def main(image_dir: str):
+@click.option('-m', '--method', default=None,
+              type=click.Choice(['segmap_encoding_v1', 'segmap_encoding_v2']),
+              help="Segmentation method")
+def main(image_dir: str, method: str):
     path = Path.cwd() / image_dir
     image_file = path / 'images.npy'
     label_file = path / 'labels.npy'
@@ -84,7 +61,7 @@ def main(image_dir: str):
         click.echo('Stamps concatenated !')
 
     if not label_file.exists():
-        concatenate_seg(path)
+        concatenate_seg(path, method=method)
         click.echo('Segmentation maps concatenated !')
 
 
