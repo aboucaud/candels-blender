@@ -70,4 +70,4 @@ def main(n_blend: int, datapath: str, seed: int) -> None:
 
 
 if __name__ == '__main__':
-    main()
+    main()  # pylint: disable=no-value-for-parameter
