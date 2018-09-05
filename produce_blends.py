@@ -1,5 +1,6 @@
 import csv
 import pathlib
+import logging
 
 import tqdm
 import numpy as np
@@ -15,7 +16,7 @@ def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
 
 def main(n_blend: int, datapath: str = 'data', seed: int = 42) -> None:
     n_blend = int(n_blend)
-    
+
     cwd = pathlib.Path.cwd()
 
     datapath = cwd / datapath
@@ -23,9 +24,17 @@ def main(n_blend: int, datapath: str = 'data', seed: int = 42) -> None:
     insegmaps = datapath / 'candels_seg.npy'
     incat = datapath / 'candels.csv'
 
+
     outdir = cwd / f'output-s_{seed}-n_{n_blend}'
     if not outdir.exists():
         outdir.mkdir()
+    outcat = outdir / 'blend_cat.csv'
+    outlog = outdir / 'blender.log'
+
+    logging.basicConfig(
+        filename=outlog,
+        level=logging.INFO,
+        format='%(asctime)s [ %(levelname)s ] : %(message)s')
     outcat = outdir / 'blend_cat.csv'
 
     blender = Blender(instamps, insegmaps, incat,
