@@ -3,9 +3,10 @@ import pathlib
 import logging
 
 import tqdm
+import click
 import numpy as np
 
-from blender import Blender, Blend, Galaxy
+from blender import Blender, Blend
 from blender.catalog import blend2cat, CATALOG_HEADER
 
 
@@ -14,7 +15,19 @@ def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
     np.save(f'{outdir}/blend_seg_{idx:06d}.npy', blend.segmap)
 
 
-def main(n_blend: int, datapath: str = 'data', seed: int = 42) -> None:
+@click.command()
+@click.argument('n_blend', type=int)
+@click.option('-d', '--datapath',
+              type=click.Path(exists=True),
+              help='Path to data files.',
+              default='./data', show_default=True)
+@click.option('-s', '--seed',
+              type=int, help='Random seed.',
+              default=42, show_default=True)
+def main(n_blend: int, datapath: str, seed: int) -> None:
+    """
+    Script that produces N_BLEND stamps of HST blended galaxies
+    """
     n_blend = int(n_blend)
 
     cwd = pathlib.Path.cwd()
@@ -23,7 +36,6 @@ def main(n_blend: int, datapath: str = 'data', seed: int = 42) -> None:
     instamps = datapath / 'candels.npy'
     insegmaps = datapath / 'candels_seg.npy'
     incat = datapath / 'candels.csv'
-
 
     outdir = cwd / f'output-s_{seed}-n_{n_blend}'
     if not outdir.exists():
@@ -54,7 +66,8 @@ def main(n_blend: int, datapath: str = 'data', seed: int = 42) -> None:
             output.writerow(blend2cat(blend, blend_id))
             save_img(blend, blend_id, outdir)
 
+    click.echo(message=f"Images stored in {outdir}")
+
 
 if __name__ == '__main__':
-    import sys
-    main(n_blend=int(sys.argv[1]), seed=int(sys.argv[2]))
+    main()
