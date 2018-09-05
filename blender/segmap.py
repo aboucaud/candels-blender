@@ -13,7 +13,8 @@ def normalize_segmap(segmap):
 
 def mask_out_pixels(img, seg, segval, noise_factor: int = 1, n_iter: int = 5):
     bseg = binary_dilation(seg, iterations=n_iter)
-    centralseg = binary_dilation(np.where(seg == segval, 1, 0), iterations=n_iter)
+    centralseg = binary_dilation(np.where(seg == segval, 1, 0),
+                                 iterations=n_iter)
     final_mask = np.logical_xor(bseg, centralseg)
     masked_std = np.std(img * np.logical_not(bseg))
     masked_img = img * ~final_mask
@@ -29,11 +30,11 @@ def mask_out_pixels_2(img, segmap, segval, n_iter: int = 5):
     sources = binary_dilation(segmap, iterations=n_iter)
     noise = np.logical_not(sources)
     # Create binary mask of the central galaxy
-    central_source = binary_dilation(np.where(segmap == segval, 1, 0), 
+    central_source = binary_dilation(np.where(segmap == segval, 1, 0),
                                      iterations=n_iter)
     # Compute the binary mask of all sources BUT the central galaxy
     sources_except_central = np.logical_xor(sources, central_source)
-    # Select random pixels from the noise in the image 
+    # Select random pixels from the noise in the image
     n_pixels_to_fill_in = sources_except_central.sum()
     noise_pixels = np.random.choice(img[noise], size=n_pixels_to_fill_in)
     # Fill in the voids with these pixels

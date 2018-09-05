@@ -5,7 +5,8 @@ import pandas as pd
 from numpy.random import RandomState
 
 from .core import Galaxy, Blend
-from .segmap import normalize_segmap, mask_out_pixels
+from .segmap import normalize_segmap
+from .segmap import mask_out_pixels
 
 
 class BlendShiftError(Exception):
@@ -50,7 +51,7 @@ class Blender:
 
         img = self.data[gal_id].copy()
         seg = self.seg[gal_id].copy()
-        segval = self.cat.segval[gal_id]
+        segval = seg[64, 64]
 
         masked_img = mask_out_pixels(img, seg, segval)
 
@@ -63,7 +64,7 @@ class Blender:
 
     def clean_seg(self, idx: int):
         """Return the segmentation contours of the central object only"""
-        return np.where(self.seg[idx] == self.cat.segval[idx],
+        return np.where(self.seg[idx] == self.seg[idx, 64, 64],
                         1, 0).astype(self.seg_dtype)
 
     def pad(self, array):
@@ -170,7 +171,7 @@ class Blender:
     def plot_blend(self, idx1: int, idx2: int):
         import matplotlib.pyplot as plt
         import astropy.visualization as viz
-        
+
         g1 = self.galaxy(idx1)
         g2 = self.galaxy(idx2)
         blend = self.blend(g1, g2)
