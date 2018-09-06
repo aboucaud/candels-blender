@@ -17,14 +17,31 @@ def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
 
 @click.command()
 @click.argument('n_blend', type=int)
+@click.option('--mag_low',
+              type=float, default=18, show_default=True,
+              help='Lowest galaxy magnitude')
+@click.option('--mag_high',
+              type=float, default=23, show_default=True,
+              help='Highest galaxy magnitude')
+@click.option('--mag_diff',
+              type=float, default=2, show_default=True,
+              help='Top magnitude difference between galaxies')
+@click.option('--rad_diff',
+              type=float, default=4, show_default=True,
+              help='Top distance between galaxies as a fraction of radius')
+@click.option('-e', '--excluded',
+              type=click.Choice(['irr', 'disk', 'sph', 'sphd']),
+              multiple=True, default=('irr',), show_default=True,
+              help='Excluded galaxy types')
 @click.option('-d', '--datapath',
               type=click.Path(exists=True),
-              help='Path to data files.',
-              default='./data', show_default=True)
+              default='./data', show_default=True,
+              help='Path to data files')
 @click.option('-s', '--seed',
-              type=int, help='Random seed.',
-              default=42, show_default=True)
-def main(n_blend: int, datapath: str, seed: int) -> None:
+              type=int, default=42, show_default=True,
+              help='Random seed')
+def main(n_blend, excluded, mag_low, mag_high,
+         mag_diff, rad_diff, datapath, seed):
     """
     Script that produces N_BLEND stamps of HST blended galaxies
     """
@@ -50,11 +67,16 @@ def main(n_blend: int, datapath: str, seed: int) -> None:
     outcat = outdir / 'blend_cat.csv'
 
     blender = Blender(instamps, insegmaps, incat,
-                      magdiff=2, raddiff=4, seed=seed)
+                      magdiff=mag_diff, raddiff=rad_diff, seed=seed)
 
-    blender.make_cut(blender.cat.mag > 18)
-    blender.make_cut(blender.cat.mag < 23)
-    blender.make_cut(blender.cat.galtype != 'irr')
+    click.echo(
+        "Selecting galaxies in the magnitude "
+        f"range {mag_low} < m < {mag_high}")
+    blender.make_cut(blender.cat.mag > mag_low)
+    blender.make_cut(blender.cat.mag < mag_high)
+    for galtype in set(excluded):
+        click.echo(f"Excluding {galtype} galaxies")
+        blender.make_cut(blender.cat.galtype != galtype)
 
     with open(outcat, 'w') as f:
         output = csv.writer(f)
