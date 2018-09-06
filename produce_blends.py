@@ -2,7 +2,6 @@ import csv
 import pathlib
 import logging
 
-import tqdm
 import click
 import numpy as np
 
@@ -81,12 +80,14 @@ def main(n_blend, excluded, mag_low, mag_high,
     with open(outcat, 'w') as f:
         output = csv.writer(f)
         output.writerow(CATALOG_HEADER)
-        for blend_id in tqdm.trange(n_blend):
-            blend = blender.next_blend()
-            while blend is None:
+        with click.progressbar(range(n_blend),
+                               label='Producing images') as bar:
+            for blend_id in bar:
                 blend = blender.next_blend()
-            output.writerow(blend2cat(blend, blend_id))
-            save_img(blend, blend_id, outdir)
+                while blend is None:
+                    blend = blender.next_blend()
+                output.writerow(blend2cat(blend, blend_id))
+                save_img(blend, blend_id, outdir)
 
     click.echo(message=f"Images stored in {outdir}")
 

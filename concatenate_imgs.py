@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import tqdm
 import click
 import numpy as np
 
@@ -18,8 +17,10 @@ def concatenate(path):
     img0 = np.load(path / IMG_TMP.format(0))
     imgmain = np.empty((n_img, *img0.shape), dtype=img0.dtype)
 
-    for idx in tqdm.trange(n_img):
-        imgmain[idx] = np.load(path / IMG_TMP.format(idx))
+    with click.progressbar(range(n_img),
+                           label='Loading stamps') as bar:
+        for idx in bar:
+            imgmain[idx] = np.load(path / IMG_TMP.format(idx))
 
     np.save(path / 'images.npy', imgmain.astype(IMG_DTYPE))
 
@@ -35,9 +36,11 @@ def concatenate_seg(path, method=None):
     img0 = method(np.load(path / SEG_TMP.format(0)))
     imgmain = np.empty((n_img, *img0.shape), dtype=img0.dtype)
 
-    for idx in tqdm.trange(n_img):
-        seg = np.load(path / SEG_TMP.format(idx))
-        imgmain[idx] = method(seg)
+    with click.progressbar(range(n_img),
+                           label='Loading masks') as bar:
+        for idx in bar:
+            seg = np.load(path / SEG_TMP.format(idx))
+            imgmain[idx] = method(seg)
 
     np.save(path / 'labels.npy', imgmain.astype(SEG_DTYPE))
 
