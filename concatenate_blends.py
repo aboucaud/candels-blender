@@ -53,8 +53,8 @@ def segmap_identity(array):
 @click.command()
 @click.argument('image_dir', type=click.Path(exists=True))
 @click.argument('method',
-                type=click.Choice(['segmap_encoding_v1',
-                                   'segmap_encoding_v2']))
+                type=click.Choice(['background_overlap_galaxies',
+                                   'overlap_galaxies']))
 @click.option('--delete', is_flag=True,
               help="Delete individual images once finished")
 def main(image_dir, method, delete):
