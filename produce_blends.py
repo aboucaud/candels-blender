@@ -28,7 +28,7 @@ def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
 @click.option('--rad_diff',
               type=float, default=4, show_default=True,
               help='Top distance between galaxies as a fraction of radius')
-@click.option('-e', '--excluded',
+@click.option('-e', '--excluded_type',
               type=click.Choice(['irr', 'disk', 'sph', 'sphd']),
               multiple=True, default=('irr',), show_default=True,
               help='Excluded galaxy types')
@@ -39,7 +39,7 @@ def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
 @click.option('-s', '--seed',
               type=int, default=42, show_default=True,
               help='Random seed')
-def main(n_blend, excluded, mag_low, mag_high,
+def main(n_blend, excluded_type, mag_low, mag_high,
          mag_diff, rad_diff, datapath, seed):
     """
     Script that produces N_BLEND stamps of HST blended galaxies
@@ -73,7 +73,7 @@ def main(n_blend, excluded, mag_low, mag_high,
         f"range {mag_low} < m < {mag_high}")
     blender.make_cut(blender.cat.mag > mag_low)
     blender.make_cut(blender.cat.mag < mag_high)
-    for galtype in set(excluded):
+    for galtype in set(excluded_type):
         click.echo(f"Excluding {galtype} galaxies")
         blender.make_cut(blender.cat.galtype != galtype)
 
