@@ -52,12 +52,22 @@ def segmap_identity(array):
 
 @click.command()
 @click.argument('image_dir', type=click.Path(exists=True))
-@click.option('-m', '--method', default=None,
-              type=click.Choice(['segmap_encoding_v1', 'segmap_encoding_v2']),
-              help="Segmentation method")
+@click.argument('method',
+                type=click.Choice(['segmap_encoding_v1',
+                                   'segmap_encoding_v2']))
 @click.option('--delete', is_flag=True,
               help="Delete individual images once finished")
 def main(image_dir, method, delete):
+    """
+    Concatenate the individual blended sources and masks from IMAGE_DIR
+    into two files `images.npy` and `labels.npy`.
+
+    `image.npy` (32 bits) contains the stacked blend images
+
+    `labels.npy` (bool) contains the labels produced from the masks
+    with the given METHOD
+
+    """
     path = Path.cwd() / image_dir
     image_file = path / 'images.npy'
     label_file = path / 'labels.npy'
