@@ -68,6 +68,26 @@ def main(n_blend, excluded_type, mag_low, mag_high,
     blender = Blender(instamps, insegmaps, incat,
                       magdiff=mag_diff, raddiff=rad_diff, seed=seed)
 
+    logger = logging.getLogger(__name__)
+    logger.info(
+        "\n"
+        "Configuration\n"
+        "=============\n"
+        f"Number of blends: {n_blend}\n"
+        f"Seed: {seed}\n"
+        "\n"
+        "Catalog cuts\n"
+        "------------\n"
+        f"Excluded galaxy types: {excluded_type}\n"
+        f"Lowest magnitude: {mag_low}\n"
+        f"Highest magnitude: {mag_high}\n"
+        "\n"
+        "Blend properties\n"
+        "----------------\n"
+        f"Top difference in magnitude between galaxies: {mag_diff}\n"
+        f"Top distance between galaxies as a fraction of radius: {rad_diff}\n"
+        )
+
     click.echo(
         "Selecting galaxies in the magnitude "
         f"range {mag_low} < m < {mag_high}")
