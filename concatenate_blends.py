@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import click
@@ -54,18 +55,25 @@ def segmap_identity(array):
 @click.option('-m', '--method', default=None,
               type=click.Choice(['segmap_encoding_v1', 'segmap_encoding_v2']),
               help="Segmentation method")
-def main(image_dir: str, method: str):
+@click.option('--delete', is_flag=True,
+              help="Delete individual images once finished")
+def main(image_dir, method, delete):
     path = Path.cwd() / image_dir
     image_file = path / 'images.npy'
     label_file = path / 'labels.npy'
 
     if not image_file.exists():
         concatenate(path)
-        click.echo('Stamps concatenated !')
+        click.echo('Stamps concatenated')
 
     if not label_file.exists():
         concatenate_seg(path, method=method)
-        click.echo('Segmentation maps concatenated !')
+        click.echo('Segmentation maps concatenated')
+
+    if delete:
+        for img in path.glob('blend_*.npy'):
+            os.remove(img)
+        click.echo('Individual stamps deleted')
 
 
 if __name__ == '__main__':
