@@ -12,13 +12,24 @@ The code uses this dataset to produce pairs of manually blended galaxies in the 
    cd candels-blender
    ```
 
-2. Download the data (contact me for now)
+2. Install the dependancies
+  - with [conda](https://www.anaconda.com/download/)
+  ```
+  conda env create                  # Use environment.yml to create the 'candel-blender' env
+  source activate candels-blender   # Activate the virtual env
+  ```
+  - without `conda` (**needs Python 3.6**)
+  ```
+  python -m pip install -r requirements.txt
+  ```
+
+3. Download the data (contact me for now)
    ```
    mkdir data
    # put the three files in this directory
    ```
 
-3. Use the first script to create the blends and their mask
+4. Use the first script to create the blends and their mask
    ```
    python produce_blends.py <number_of_desired_images>
 
@@ -30,9 +41,9 @@ The code uses this dataset to produce pairs of manually blended galaxies in the 
    ```
    All the images will be placed in a specific directory.
 
-4. Use the second script to merge the images into a single object and create the labels
+5. Use the second script to merge the images into a single object and create the labels
    ```
-   python concatenate_blends.py output-s_XX-nXXXXX --method XXX
+   python concatenate_blends.py output-s_XX-nXXXXX --method overlap_galaxies
 
    # Check the full options with
    python concatenate_blends.py --help
