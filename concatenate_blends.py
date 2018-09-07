@@ -51,7 +51,7 @@ def segmap_identity(array):
 
 
 @click.command()
-@click.argument('image_dir')
+@click.argument('image_dir', type=click.Path(exists=True))
 @click.option('-m', '--method', default=None,
               type=click.Choice(['segmap_encoding_v1', 'segmap_encoding_v2']),
               help="Segmentation method")
