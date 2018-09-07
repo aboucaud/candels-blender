@@ -1,8 +1,10 @@
 # HST galaxy blender
 
-**Initial dataset**: a galaxy catalog and stamps from the public HST CANDELS dataset, plus the associated segmentation masks obtained with SExtractor.
+**Initial dataset**: a galaxy catalog and stamps from the public HST CANDELS dataset, plus the associated segmentation masks obtained with SExtractor.  
 
-The code uses this dataset to produce pairs of manually blended galaxies in the form of 128x128, 32 bits images and their associated 128x128x2, binary masks.
+The code uses this dataset to produce blended galaxies pairs in the form of 128x128, 32 bits images and their associated 128x128x2, binary masks.  
+The neighboring objects that could be initially on the stamps are replaced with noise realizations from the background (this may affect the quality of the dataset).  
+The masks of both objects can then be combined (see `concatenate_blends.py`) to create various targets depending on the deblending goal.
 
 ## Usage
 
@@ -13,15 +15,15 @@ The code uses this dataset to produce pairs of manually blended galaxies in the 
    ```
 
 2. Install the dependancies
-  - with [conda](https://www.anaconda.com/download/)
-  ```
-  conda env create                  # Use environment.yml to create the 'candel-blender' env
-  source activate candels-blender   # Activate the virtual env
-  ```
-  - without `conda` (**needs Python 3.6**)
-  ```
-  python -m pip install -r requirements.txt
-  ```
+   - with [conda](https://www.anaconda.com/download/)
+   ```
+   conda env create                  # Use environment.yml to create the 'candel-blender' env
+   source activate candels-blender   # Activate the virtual env
+   ```
+   - without `conda` (**needs Python 3.6**)
+   ```
+   python -m pip install -r requirements.txt
+   ```
 
 3. Download the data (contact me for now)
    ```
@@ -50,3 +52,8 @@ The code uses this dataset to produce pairs of manually blended galaxies in the 
    ```
    This step will produce two files `images.npy` and `labels.npy` in the same directory as the individual images.
 
+
+## Example notebooks
+
+You will find a directory with two static notebooks that can help you understand the blending process.  
+They are **not meant to be runnable**.
