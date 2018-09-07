@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 import numpy as np
@@ -148,8 +149,10 @@ class Blender:
         try:
             blend = self.blend(gal1, gal2, masked=masked)
         except BlendShiftError:
-            print(f"Issue while blending galaxies {gal1.gal_id} and "
-                  f"{gal2.gal_id}")
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"Issue while blending galaxies {gal1.gal_id} and "
+                f"{gal2.gal_id}")
             blend = None
 
         return blend

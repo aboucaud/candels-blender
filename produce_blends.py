@@ -1,10 +1,11 @@
 import csv
 import pathlib
+import logging
 
-import tqdm
+import click
 import numpy as np
 
-from blender import Blender, Blend, Galaxy
+from blender import Blender, Blend
 from blender.catalog import blend2cat, CATALOG_HEADER
 
 
@@ -13,9 +14,38 @@ def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
     np.save(f'{outdir}/blend_seg_{idx:06d}.npy', blend.segmap)
 
 
-def main(n_blend: int, datapath: str = 'data', seed: int = 42) -> None:
+@click.command()
+@click.argument('n_blend', type=int)
+@click.option('--mag_low',
+              type=float, default=18, show_default=True,
+              help='Lowest galaxy magnitude')
+@click.option('--mag_high',
+              type=float, default=23, show_default=True,
+              help='Highest galaxy magnitude')
+@click.option('--mag_diff',
+              type=float, default=2, show_default=True,
+              help='Top magnitude difference between galaxies')
+@click.option('--rad_diff',
+              type=float, default=4, show_default=True,
+              help='Top distance between galaxies as a fraction of radius')
+@click.option('-e', '--excluded_type',
+              type=click.Choice(['irr', 'disk', 'sph', 'sphd']),
+              multiple=True, default=('irr',), show_default=True,
+              help='Excluded galaxy types')
+@click.option('-d', '--datapath',
+              type=click.Path(exists=True),
+              default='./data', show_default=True,
+              help='Path to data files')
+@click.option('-s', '--seed',
+              type=int, default=42, show_default=True,
+              help='Random seed')
+def main(n_blend, excluded_type, mag_low, mag_high,
+         mag_diff, rad_diff, datapath, seed):
+    """
+    Script that produces N_BLEND stamps of HST blended galaxies
+    """
     n_blend = int(n_blend)
-    
+
     cwd = pathlib.Path.cwd()
 
     datapath = cwd / datapath
@@ -27,25 +57,60 @@ def main(n_blend: int, datapath: str = 'data', seed: int = 42) -> None:
     if not outdir.exists():
         outdir.mkdir()
     outcat = outdir / 'blend_cat.csv'
+    outlog = outdir / 'blender.log'
+
+    logging.basicConfig(
+        filename=outlog,
+        level=logging.INFO,
+        format='%(asctime)s [ %(levelname)s ] : %(message)s')
+    outcat = outdir / 'blend_cat.csv'
 
     blender = Blender(instamps, insegmaps, incat,
-                      magdiff=2, raddiff=4, seed=seed)
+                      magdiff=mag_diff, raddiff=rad_diff, seed=seed)
 
-    blender.make_cut(blender.cat.mag > 18)
-    blender.make_cut(blender.cat.mag < 23)
-    blender.make_cut(blender.cat.galtype != 'irr')
+    logger = logging.getLogger(__name__)
+    logger.info(
+        "\n"
+        "Configuration\n"
+        "=============\n"
+        f"Number of blends: {n_blend}\n"
+        f"Seed: {seed}\n"
+        "\n"
+        "Catalog cuts\n"
+        "------------\n"
+        f"Excluded galaxy types: {excluded_type}\n"
+        f"Lowest magnitude: {mag_low}\n"
+        f"Highest magnitude: {mag_high}\n"
+        "\n"
+        "Blend properties\n"
+        "----------------\n"
+        f"Top difference in magnitude between galaxies: {mag_diff}\n"
+        f"Top distance between galaxies as a fraction of radius: {rad_diff}\n"
+        )
+
+    click.echo(
+        "Selecting galaxies in the magnitude "
+        f"range {mag_low} < m < {mag_high}")
+    blender.make_cut(blender.cat.mag > mag_low)
+    blender.make_cut(blender.cat.mag < mag_high)
+    for galtype in set(excluded_type):
+        click.echo(f"Excluding {galtype} galaxies")
+        blender.make_cut(blender.cat.galtype != galtype)
 
     with open(outcat, 'w') as f:
         output = csv.writer(f)
         output.writerow(CATALOG_HEADER)
-        for blend_id in tqdm.trange(n_blend):
-            blend = blender.next_blend()
-            while blend is None:
+        with click.progressbar(range(n_blend),
+                               label='Producing images') as bar:
+            for blend_id in bar:
                 blend = blender.next_blend()
-            output.writerow(blend2cat(blend, blend_id))
-            save_img(blend, blend_id, outdir)
+                while blend is None:
+                    blend = blender.next_blend()
+                output.writerow(blend2cat(blend, blend_id))
+                save_img(blend, blend_id, outdir)
+
+    click.echo(message=f"Images stored in {outdir}")
 
 
 if __name__ == '__main__':
-    import sys
-    main(n_blend=int(sys.argv[1]), seed=int(sys.argv[2]))
+    main()  # pylint: disable=no-value-for-parameter

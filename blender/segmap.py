@@ -44,7 +44,7 @@ def mask_out_pixels_2(img, segmap, segval, n_iter: int = 5):
     return masked_img
 
 
-def segmap_encoding_v1(segmap, dtype=np.uint8):
+def background_overlap_galaxies(segmap, dtype=np.uint8):
     """Convert label array to one hot encoding as defined in the UNet"""
     segmap = segmap.astype(bool)
     s1, s2 = segmap
@@ -59,7 +59,7 @@ def segmap_encoding_v1(segmap, dtype=np.uint8):
     return output.astype(dtype)
 
 
-def segmap_encoding_v2(segmap, dtype=np.uint8):
+def overlap_galaxies(segmap, dtype=np.uint8):
     segmap = segmap.astype(bool)
     s1, s2 = segmap
     array_list = [
