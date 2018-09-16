@@ -12,18 +12,27 @@ IMG_DTYPE = np.float32
 SEG_DTYPE = np.uint8
 
 
-def concatenate(path):
+def concatenate_img(path, with_labels=False):
     n_img = len(list(path.glob('blend_seg*npy')))
 
     img0 = np.load(path / IMG_TMP.format(0))
-    imgmain = np.empty((n_img, *img0.shape), dtype=img0.dtype)
+    imgmain = np.empty((n_img, *img0.shape[:-1]), dtype=img0.dtype)
+    if with_labels:
+        img_indiv = np.empty((n_img, *img0.shape), dtype=img0.dtype)
 
     with click.progressbar(range(n_img),
                            label='Loading stamps') as bar:
         for idx in bar:
-            imgmain[idx] = np.load(path / IMG_TMP.format(idx))
+            img = np.load(path / IMG_TMP.format(idx))
+            imgmain[idx] = img.sum(axis=-1)
+            if with_labels:
+                # Channels last
+                img_indiv[idx, ...] = img
 
     np.save(path / 'images.npy', imgmain.astype(IMG_DTYPE))
+
+    if with_labels:
+        np.save(path / 'labels.npy', img_indiv.astype(IMG_DTYPE))
 
 
 def concatenate_seg(path, method=None):
@@ -54,7 +63,8 @@ def segmap_identity(array):
 @click.argument('image_dir', type=click.Path(exists=True))
 @click.argument('method',
                 type=click.Choice(['background_overlap_galaxies',
-                                   'overlap_galaxies']))
+                                   'overlap_galaxies',
+                                   'individual_galaxy_images']))
 @click.option('--delete', is_flag=True,
               help="Delete individual images once finished")
 def main(image_dir, method, delete):
@@ -73,12 +83,16 @@ def main(image_dir, method, delete):
     label_file = path / 'labels.npy'
 
     if not image_file.exists():
-        concatenate(path)
+        if method == 'individual_galaxy_images':
+            concatenate_img(path, with_labels=True)
+        else:
+            concatenate_img(path)
         click.echo('Stamps concatenated')
 
-    if not label_file.exists():
-        concatenate_seg(path, method=method)
-        click.echo('Segmentation maps concatenated')
+    if method != 'individual_galaxy_images':
+        if not label_file.exists():
+            concatenate_seg(path, method=method)
+            click.echo('Segmentation maps concatenated')
 
     if delete:
         for img in path.glob('blend_*.npy'):

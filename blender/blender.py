@@ -98,14 +98,14 @@ class Blender:
         img2 = self.shift(img2, coords)
         seg2 = self.shift(seg2, coords)
 
-        img_sum = img + img2
+        img_cube = np.concatenate([img[..., None], img2[..., None]], axis=-1)
         seg_cube = np.concatenate([seg[None, ...], seg2[None, ...]])
 
-        assert img_sum.dtype == self.img_dtype
+        assert img_cube.dtype == self.img_dtype
         assert seg_cube.dtype == self.seg_dtype
 
         return Blend(
-            img=img_sum,
+            img=img_cube,
             segmap=seg_cube,
             gal1=gal1,
             gal2=gal2,
