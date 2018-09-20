@@ -9,9 +9,10 @@ from blender import Blender, Blend
 from blender.catalog import blend2cat, CATALOG_HEADER
 
 
-def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
-    np.save(f'{outdir}/blend_{idx:06d}.npy', blend.img)
-    np.save(f'{outdir}/blend_seg_{idx:06d}.npy', blend.segmap)
+def save_img(blend: Blend, idx: int, prefix: str,
+             outdir: str = '.') -> None:
+    np.save(f'{outdir}/{prefix}_blend_{idx:06d}.npy', blend.img)
+    np.save(f'{outdir}/{prefix}_blend_seg_{idx:06d}.npy', blend.segmap)
 
 
 @click.command()
@@ -28,6 +29,9 @@ def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
 @click.option('--rad_diff',
               type=float, default=4, show_default=True,
               help='Top distance between galaxies as a fraction of radius')
+@click.option('-t', '--test_ratio',
+              type=float, default=0.2, show_default=True,
+              help='Ratio of the input galaxies used only for the test set')
 @click.option('-e', '--excluded_type',
               type=click.Choice(['irr', 'disk', 'sph', 'sphd']),
               multiple=True, default=('irr',), show_default=True,
@@ -40,7 +44,7 @@ def save_img(blend: Blend, idx: int, outdir: str = '.') -> None:
               type=int, default=42, show_default=True,
               help='Random seed')
 def main(n_blend, excluded_type, mag_low, mag_high,
-         mag_diff, rad_diff, datapath, seed):
+         mag_diff, rad_diff, test_ratio, datapath, seed):
     """
     Script that produces N_BLEND stamps of HST blended galaxies
     """
@@ -63,9 +67,9 @@ def main(n_blend, excluded_type, mag_low, mag_high,
         filename=outlog,
         level=logging.INFO,
         format='%(asctime)s [ %(levelname)s ] : %(message)s')
-    outcat = outdir / 'blend_cat.csv'
 
     blender = Blender(instamps, insegmaps, incat,
+                      train_test_ratio=test_ratio,
                       magdiff=mag_diff, raddiff=rad_diff, seed=seed)
 
     logger = logging.getLogger(__name__)
@@ -97,19 +101,34 @@ def main(n_blend, excluded_type, mag_low, mag_high,
         click.echo(f"Excluding {galtype} galaxies")
         blender.make_cut(blender.cat.galtype != galtype)
 
+    n_test = int(test_ratio * n_blend)
+    n_train = n_blend - n_test
+
+    create_image_set(blender, n_train, outdir)
+    create_image_set(blender, n_test, outdir, test_set=True)
+
+    click.echo(message=f"Images stored in {outdir}")
+
+
+def create_image_set(blender, n_blends, outdir, test_set=False):
+    prefix = 'train'
+    if test_set:
+        prefix = 'test'
+
+    outcat = outdir / f'{prefix}_blend_cat.csv'
+
     with open(outcat, 'w') as f:
         output = csv.writer(f)
         output.writerow(CATALOG_HEADER)
-        with click.progressbar(range(n_blend),
-                               label='Producing images') as bar:
-            for blend_id in bar:
-                blend = blender.next_blend()
-                while blend is None:
-                    blend = blender.next_blend()
-                output.writerow(blend2cat(blend, blend_id))
-                save_img(blend, blend_id, outdir)
 
-    click.echo(message=f"Images stored in {outdir}")
+        msg = f'Producing {prefix} blended images'
+        with click.progressbar(range(n_blends), label=msg) as bar:
+            for blend_id in bar:
+                blend = blender.next_blend(from_test=test_set)
+                while blend is None:
+                    blend = blender.next_blend(from_test=test_set)
+                output.writerow(blend2cat(blend, blend_id))
+                save_img(blend, blend_id, prefix, outdir)
 
 
 if __name__ == '__main__':
