@@ -12,15 +12,36 @@ IMG_DTYPE = np.float32
 SEG_DTYPE = np.uint8
 
 
-def concatenate_img(path, prefix, with_labels=False):
-    n_img = len(list(path.glob(f'{prefix}_blend_seg*npy')))
+def concatenate_img(path: str, prefix: str, with_labels: bool = False):
+    """
+    Create a stack of blends from the individual images.
 
+    The individual files actually contain the images of the individual
+    galaxies that need to be sum up to obtain the blend. This method
+    takes care of this and can also output the individual galaxies as the
+    labels.
+
+    Parameters
+    ----------
+    path:
+        directory containing the individual image files
+    prefix: {'train','test'}
+        prefix of the image files corresponding to the split
+    with_labels:
+        saves the individual images as target
+
+    """
+    # Retrieving the number of files and shape of images for the output
+    n_img = len(list(path.glob(f'{prefix}_blend_seg*npy')))
     img0 = np.load(path / IMG_TMP.format(prefix=prefix, idx=0))
+
+    # Create placeholder for the images
     imgmain = np.empty((n_img, *img0.shape[:-1]), dtype=img0.dtype)
     if with_labels:
         img_indiv = np.empty((n_img, *img0.shape), dtype=img0.dtype)
 
-    msg = f'Processing {prefix} stamps'
+    # Load and process the images
+    msg = f'Processing the {prefix}ing stamps'
     with click.progressbar(range(n_img), label=msg) as bar:
         for idx in bar:
             img = np.load(path / IMG_TMP.format(prefix=prefix, idx=idx))
@@ -35,18 +56,37 @@ def concatenate_img(path, prefix, with_labels=False):
         np.save(path / f'{prefix}_labels.npy', img_indiv.astype(IMG_DTYPE))
 
 
-def concatenate_seg(path, prefix, method=None):
-    n_img = len(list(path.glob(f'{prefix}_blend_seg*npy')))
+def concatenate_seg(path: str, prefix: str, method: str = None):
+    """
+    Create a stack of masks from the individual files.
 
+    The input files contain the masks of the individual galaxies which are
+    then processed using the specified method to create the target labels.
+
+    Parameters
+    ----------
+    path:
+        directory containing the individual segmentation files
+    prefix: {'train','test'}
+        prefix of the image files corresponding to the split
+    method: {'background_overlap_galaxies', 'overlap_galaxies'}
+        name of existing methods in `blender.segmap` to produce the labels
+
+    """
     method = method or segmap_identity
 
     if isinstance(method, str):
         method = getattr(segmap, method)
 
+    # Retrieving the number of files and shape of images for the output
+    n_img = len(list(path.glob(f'{prefix}_blend_seg*npy')))
     img0 = method(np.load(path / SEG_TMP.format(prefix=prefix, idx=0)))
+
+    # Create placeholder for the images
     imgmain = np.empty((n_img, *img0.shape), dtype=img0.dtype)
 
-    msg = f'Loading {prefix} masks'
+    # Load and process the images
+    msg = f'Processing the {prefix}ing masks'
     with click.progressbar(range(n_img), label=msg) as bar:
         for idx in bar:
             seg = np.load(path / SEG_TMP.format(prefix=prefix, idx=idx))
@@ -56,6 +96,7 @@ def concatenate_seg(path, prefix, method=None):
 
 
 def segmap_identity(array):
+    "Methods that returns the given array in a specific type"
     return array.astype(SEG_DTYPE)
 
 
@@ -90,12 +131,12 @@ def main(image_dir, method, prefix, delete):
             concatenate_img(path, prefix, with_labels=True)
         else:
             concatenate_img(path, prefix)
-        click.echo('Stamps concatenated')
+        click.echo(f'=> {image_file} created')
 
     if method != 'individual_galaxy_images':
         if not label_file.exists():
             concatenate_seg(path, prefix, method=method)
-            click.echo('Segmentation maps concatenated')
+            click.echo(f'=> {label_file} created')
 
     if delete:
         for img in path.glob(f'{prefix}_blend_*.npy'):
