@@ -65,25 +65,22 @@ def segmap_identity(array):
                 type=click.Choice(['background_overlap_galaxies',
                                    'overlap_galaxies',
                                    'individual_galaxy_images']))
-@click.option('--test', is_flag=True,
-              help="Test images")
+@click.option('--train', 'prefix', flag_value='train', default=True,
+              help="Apply to train images")
+@click.option('--test', 'prefix', flag_value='test',
+              help="Apply to test images")
 @click.option('--delete', is_flag=True,
               help="Delete individual images once finished")
-def main(image_dir, method, test, delete):
+def main(image_dir, method, prefix, delete):
     """
     Concatenate the individual blended sources and masks from IMAGE_DIR
-    into two files `images.npy` and `labels.npy`.
+    to create the input (images.npy) and target (labels.npy) files.
 
-    `image.npy` (32 bits) contains the stacked blend images
+    Use the --train/--test option to specify which split to act on.
 
-    `labels.npy` (bool) contains the labels produced from the masks
-    with the given METHOD
+    Use the --delete option to remove the individual image files at the end.
 
     """
-    prefix = 'train'
-    if test:
-        prefix = 'test'
-
     path = Path.cwd() / image_dir
     image_file = path / f'{prefix}_images.npy'
     label_file = path / f'{prefix}_labels.npy'
