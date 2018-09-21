@@ -1,6 +1,6 @@
 import csv
-import pathlib
 import logging
+from pathlib import Path
 
 import click
 import numpy as np
@@ -13,6 +13,42 @@ def save_img(blend: Blend, idx: int, prefix: str,
              outdir: str = '.') -> None:
     np.save(f'{outdir}/{prefix}_blend_{idx:06d}.npy', blend.img)
     np.save(f'{outdir}/{prefix}_blend_seg_{idx:06d}.npy', blend.segmap)
+
+
+def create_image_set(blender: Blender, n_blends: int, outdir: Path,
+                     test_set: bool = False):
+    """
+    Use a Blender instance to output stamps of blended galaxies and
+    their associated segmentation mask, plus a catalog of these sources.
+
+    Parameters
+    ----------
+    blender:
+        the Blender instance
+    n_blends:
+        number of desired images
+    outdir:
+        output directory
+    test_set: default False
+        switch between the training and testing galaxy split
+
+    """
+    prefix = 'test' if test_set else 'train'
+
+    outcat = outdir / f'{prefix}_blend_cat.csv'
+
+    with open(outcat, 'w') as f:
+        output = csv.writer(f)
+        output.writerow(CATALOG_HEADER)
+
+        msg = f'Producing {prefix} blended images'
+        with click.progressbar(range(n_blends), label=msg) as bar:
+            for blend_id in bar:
+                blend = blender.next_blend(from_test=test_set)
+                while blend is None:
+                    blend = blender.next_blend(from_test=test_set)
+                output.writerow(blend2cat(blend, blend_id))
+                save_img(blend, blend_id, prefix, outdir)
 
 
 @click.command()
@@ -46,12 +82,10 @@ def save_img(blend: Blend, idx: int, prefix: str,
 def main(n_blend, excluded_type, mag_low, mag_high,
          mag_diff, rad_diff, test_ratio, datapath, seed):
     """
-    Script that produces N_BLEND stamps of HST blended galaxies
+    Produce N_BLEND stamps of HST blended galaxies with their individual masks
     """
-    n_blend = int(n_blend)
-
-    cwd = pathlib.Path.cwd()
-
+    # Define the various paths and create directories
+    cwd = Path.cwd()
     datapath = cwd / datapath
     instamps = datapath / 'candels.npy'
     insegmaps = datapath / 'candels_seg.npy'
@@ -60,7 +94,6 @@ def main(n_blend, excluded_type, mag_low, mag_high,
     outdir = cwd / f'output-s_{seed}-n_{n_blend}'
     if not outdir.exists():
         outdir.mkdir()
-    outcat = outdir / 'blend_cat.csv'
     outlog = outdir / 'blender.log'
 
     logging.basicConfig(
@@ -92,6 +125,7 @@ def main(n_blend, excluded_type, mag_low, mag_high,
         f"Top distance between galaxies as a fraction of radius: {rad_diff}\n"
         )
 
+    # Apply cuts to the galaxy catalog
     click.echo(
         "Selecting galaxies in the magnitude "
         f"range {mag_low} < m < {mag_high}")
@@ -101,6 +135,7 @@ def main(n_blend, excluded_type, mag_low, mag_high,
         click.echo(f"Excluding {galtype} galaxies")
         blender.make_cut(blender.cat.galtype != galtype)
 
+    # Compute the train/test splits
     n_test = int(test_ratio * n_blend)
     n_train = n_blend - n_test
 
@@ -108,27 +143,6 @@ def main(n_blend, excluded_type, mag_low, mag_high,
     create_image_set(blender, n_test, outdir, test_set=True)
 
     click.echo(message=f"Images stored in {outdir}")
-
-
-def create_image_set(blender, n_blends, outdir, test_set=False):
-    prefix = 'train'
-    if test_set:
-        prefix = 'test'
-
-    outcat = outdir / f'{prefix}_blend_cat.csv'
-
-    with open(outcat, 'w') as f:
-        output = csv.writer(f)
-        output.writerow(CATALOG_HEADER)
-
-        msg = f'Producing {prefix} blended images'
-        with click.progressbar(range(n_blends), label=msg) as bar:
-            for blend_id in bar:
-                blend = blender.next_blend(from_test=test_set)
-                while blend is None:
-                    blend = blender.next_blend(from_test=test_set)
-                output.writerow(blend2cat(blend, blend_id))
-                save_img(blend, blend_id, prefix, outdir)
 
 
 if __name__ == '__main__':
