@@ -26,7 +26,7 @@ def mask_out_pixels(img: Stamp, seg: Stamp, segval: Stamp,
     return new_img.astype(img.dtype)
 
 
-def mask_out_pixels_2(img: Stamp, seg: Stamp, segval: Stamp,
+def mask_out_pixels_2(img: Stamp, segmap: Stamp, segval: Stamp,
                       n_iter: int = 5) -> Stamp:
     # Create binary masks of all segmented sources
     sources = binary_dilation(segmap, iterations=n_iter)
