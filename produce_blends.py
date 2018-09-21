@@ -16,7 +16,7 @@ def save_img(blend: Blend, idx: int, prefix: str,
 
 
 def create_image_set(blender: Blender, n_blends: int, outdir: Path,
-                     test_set: bool = False):
+                     test_set: bool = False) -> None:
     """
     Use a Blender instance to output stamps of blended galaxies and
     their associated segmentation mask, plus a catalog of these sources.

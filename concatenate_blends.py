@@ -12,7 +12,8 @@ IMG_DTYPE = np.float32
 SEG_DTYPE = np.uint8
 
 
-def concatenate_img(path: str, prefix: str, with_labels: bool = False):
+def concatenate_img(path: str, prefix: str,
+                    with_labels: bool = False) -> None:
     """
     Create a stack of blends from the individual images.
 
@@ -56,7 +57,7 @@ def concatenate_img(path: str, prefix: str, with_labels: bool = False):
         np.save(path / f'{prefix}_labels.npy', img_indiv.astype(IMG_DTYPE))
 
 
-def concatenate_seg(path: str, prefix: str, method: str = None):
+def concatenate_seg(path: str, prefix: str, method: str = None) -> None:
     """
     Create a stack of masks from the individual files.
 
@@ -95,7 +96,7 @@ def concatenate_seg(path: str, prefix: str, method: str = None):
     np.save(path / f'{prefix}_labels.npy', imgmain.astype(SEG_DTYPE))
 
 
-def segmap_identity(array):
+def segmap_identity(array: np.array) -> np.array:
     "Methods that returns the given array in a specific type"
     return array.astype(SEG_DTYPE)
 
