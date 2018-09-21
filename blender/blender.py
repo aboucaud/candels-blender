@@ -1,8 +1,9 @@
 import logging
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
+from numpy import ndarray as Stamp  # pragma: no cover
 from numpy.random import RandomState
 
 from .core import Galaxy, Blend
@@ -51,7 +52,8 @@ class Blender:
         galfields = ['ID', 'mag', 'radius', 'z', 'galtype']
         return Galaxy(idx, *self.cat.iloc[idx][galfields])
 
-    def original_stamp(self, gal: Galaxy, norm_segmap: bool = False):
+    def original_stamp(self, gal: Galaxy,
+                       norm_segmap: bool = False) -> Tuple[Stamp]:
         gal_id = gal.cat_id
 
         img = self.data[gal_id].copy()
@@ -62,7 +64,7 @@ class Blender:
 
         return img, seg
 
-    def masked_stamp(self, gal: Galaxy):
+    def masked_stamp(self, gal: Galaxy) -> Tuple[Stamp]:
         gal_id = gal.cat_id
 
         img = self.data[gal_id].copy()
@@ -73,27 +75,27 @@ class Blender:
 
         return masked_img, self.clean_seg(gal_id)
 
-    def make_cut(self, logic):
+    def make_cut(self, logic) -> None:
         self.data = self.data[logic]
         self.seg = self.seg[logic]
         self.cat = self.cat[logic].reset_index(drop=True)
 
         self.assign_train_test()
 
-    def clean_seg(self, idx: int):
+    def clean_seg(self, idx: int) -> Stamp:
         """Return the segmentation contours of the central object only"""
         return np.where(self.seg[idx] == self.seg[idx, 64, 64],
                         1, 0).astype(self.seg_dtype)
 
-    def pad(self, array):
+    def pad(self, array) -> Stamp:
         return np.pad(array, self.img_size // 2, mode='constant')
 
-    def crop(self, array):
+    def crop(self, array) -> Stamp:
         padding = self.img_size // 2
         cut = slice(padding, self.img_size + padding)
         return array[cut, cut]
 
-    def shift(self, array, coords: List[int]):
+    def shift(self, array, coords: List[int]) -> Stamp:
         dy, dx = coords
         array = self.pad(array)
         array = np.roll(np.roll(array, dx, axis=1), dy, axis=0)
@@ -145,7 +147,7 @@ class Blender:
 
         return gal
 
-    def random_pair(self, from_test: bool = False):
+    def random_pair(self, from_test: bool = False) -> Tuple[Galaxy]:
         "Pick a random pair of galaxies with specific flux constrains"
         gal1 = self.random_galaxy(from_test)
         gal2 = self.random_galaxy(from_test)
@@ -189,7 +191,7 @@ class Blender:
 
         return blend
 
-    def plot_data(self, idx: int):
+    def plot_data(self, idx: int) -> None:
         import matplotlib.pyplot as plt
 
         _, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 8))

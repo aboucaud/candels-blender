@@ -1,9 +1,9 @@
 import numpy as np
-
+from numpy import ndarray as Stamp  # pragma: no cover
 from scipy.ndimage import binary_dilation
 
 
-def normalize_segmap(segmap):
+def normalize_segmap(segmap: Stamp) -> Stamp:
     new_segmap = segmap.copy()
     val_list = np.unique(segmap)
     for idx, val in enumerate(val_list):
@@ -11,7 +11,8 @@ def normalize_segmap(segmap):
     return new_segmap
 
 
-def mask_out_pixels(img, seg, segval, noise_factor: int = 1, n_iter: int = 5):
+def mask_out_pixels(img: Stamp, seg: Stamp, segval: Stamp,
+                    noise_factor: int = 1, n_iter: int = 5) -> Stamp:
     bseg = binary_dilation(seg, iterations=n_iter)
     centralseg = binary_dilation(np.where(seg == segval, 1, 0),
                                  iterations=n_iter)
@@ -25,7 +26,8 @@ def mask_out_pixels(img, seg, segval, noise_factor: int = 1, n_iter: int = 5):
     return new_img.astype(img.dtype)
 
 
-def mask_out_pixels_2(img, segmap, segval, n_iter: int = 5):
+def mask_out_pixels_2(img: Stamp, seg: Stamp, segval: Stamp,
+                      n_iter: int = 5) -> Stamp:
     # Create binary masks of all segmented sources
     sources = binary_dilation(segmap, iterations=n_iter)
     noise = np.logical_not(sources)
@@ -44,7 +46,7 @@ def mask_out_pixels_2(img, segmap, segval, n_iter: int = 5):
     return masked_img
 
 
-def background_overlap_galaxies(segmap, dtype=np.uint8):
+def background_overlap_galaxies(segmap: Stamp, dtype=np.uint8) -> Stamp:
     """Convert label array to one hot encoding as defined in the UNet"""
     segmap = segmap.astype(bool)
     s1, s2 = segmap
@@ -59,7 +61,7 @@ def background_overlap_galaxies(segmap, dtype=np.uint8):
     return output.astype(dtype)
 
 
-def overlap_galaxies(segmap, dtype=np.uint8):
+def overlap_galaxies(segmap: Stamp, dtype=np.uint8) -> Stamp:
     segmap = segmap.astype(bool)
     s1, s2 = segmap
     array_list = [
