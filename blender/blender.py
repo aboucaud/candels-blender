@@ -1,8 +1,9 @@
 import logging
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
+from numpy import ndarray as Stamp  # pragma: no cover
 from numpy.random import RandomState
 
 from .core import Galaxy, Blend
@@ -14,29 +15,45 @@ class BlendShiftError(Exception):
     pass
 
 
+class BlendMissingTestError(Exception):
+    pass
+
+
 class Blender:
     img_dtype = np.float32
     seg_dtype = np.uint8
 
     def __init__(self, imgpath: str, segpath: str, catpath: str,
+                 train_test_ratio: float = 0.2,
                  magdiff: int = 2, raddiff: int = 4, seed: int = 42) -> None:
         self.data = np.load(imgpath).astype(self.img_dtype, copy=False)
         self.seg = np.load(segpath).astype(self.seg_dtype, copy=False)
         self.cat = pd.read_csv(catpath)
+        self.tt_ratio = np.clip(train_test_ratio, 0, 1)
         self.magdiff = magdiff
         self.raddiff = raddiff
         self.rng = RandomState(seed=seed)
         self.img_size = self.data.shape[-1]
 
+        self.assign_train_test()
+
     @property
     def n_gal(self) -> int:
         return len(self.data)
+
+    def assign_train_test(self) -> None:
+        randomized_indices = self.rng.permutation(self.n_gal)
+        split_idx = int(self.n_gal * self.tt_ratio)
+        test, train = np.split(randomized_indices, [split_idx])
+        self.train_idx = train
+        self.test_idx = test
 
     def galaxy(self, idx: int) -> Galaxy:
         galfields = ['ID', 'mag', 'radius', 'z', 'galtype']
         return Galaxy(idx, *self.cat.iloc[idx][galfields])
 
-    def original_stamp(self, gal: Galaxy, norm_segmap: bool = False):
+    def original_stamp(self, gal: Galaxy,
+                       norm_segmap: bool = False) -> Tuple[Stamp]:
         gal_id = gal.cat_id
 
         img = self.data[gal_id].copy()
@@ -47,7 +64,7 @@ class Blender:
 
         return img, seg
 
-    def masked_stamp(self, gal: Galaxy):
+    def masked_stamp(self, gal: Galaxy) -> Tuple[Stamp]:
         gal_id = gal.cat_id
 
         img = self.data[gal_id].copy()
@@ -58,25 +75,27 @@ class Blender:
 
         return masked_img, self.clean_seg(gal_id)
 
-    def make_cut(self, logic):
+    def make_cut(self, logic) -> None:
         self.data = self.data[logic]
         self.seg = self.seg[logic]
         self.cat = self.cat[logic].reset_index(drop=True)
 
-    def clean_seg(self, idx: int):
+        self.assign_train_test()
+
+    def clean_seg(self, idx: int) -> Stamp:
         """Return the segmentation contours of the central object only"""
         return np.where(self.seg[idx] == self.seg[idx, 64, 64],
                         1, 0).astype(self.seg_dtype)
 
-    def pad(self, array):
+    def pad(self, array) -> Stamp:
         return np.pad(array, self.img_size // 2, mode='constant')
 
-    def crop(self, array):
+    def crop(self, array) -> Stamp:
         padding = self.img_size // 2
         cut = slice(padding, self.img_size + padding)
         return array[cut, cut]
 
-    def shift(self, array, coords: List[int]):
+    def shift(self, array, coords: List[int]) -> Stamp:
         dy, dx = coords
         array = self.pad(array)
         array = np.roll(np.roll(array, dx, axis=1), dy, axis=0)
@@ -112,12 +131,26 @@ class Blender:
             shift=coords
         )
 
-    def random_galaxy(self) -> Galaxy:
-        return self.galaxy(self.rng.randint(0, self.n_gal))
+    def random_galaxy(self, from_test: bool = False) -> Galaxy:
+        "Pick a random galaxy from the catalog"
+        if from_test:
+            try:
+                gal = self.galaxy(self.rng.choice(self.test_idx))
+            except ValueError:
+                raise BlendMissingTestError(
+                    "The test set has not been specified. "
+                    "Initialize the blender with a non-zero "
+                    "`train_test_ratio`.")
 
-    def random_pair(self):
-        gal1 = self.random_galaxy()
-        gal2 = self.random_galaxy()
+        else:
+            gal = self.galaxy(self.rng.choice(self.train_idx))
+
+        return gal
+
+    def random_pair(self, from_test: bool = False) -> Tuple[Galaxy]:
+        "Pick a random pair of galaxies with specific flux constrains"
+        gal1 = self.random_galaxy(from_test)
+        gal2 = self.random_galaxy(from_test)
         while not np.abs(gal1.mag - gal2.mag) < self.magdiff:
             gal2 = self.random_galaxy()
 
@@ -143,8 +176,9 @@ class Blender:
 
         return coords
 
-    def next_blend(self, masked: bool = True) -> Blend:
-        gal1, gal2 = self.random_pair()
+    def next_blend(self, from_test: bool = False,
+                   masked: bool = True) -> Blend:
+        gal1, gal2 = self.random_pair(from_test)
 
         try:
             blend = self.blend(gal1, gal2, masked=masked)
@@ -157,7 +191,7 @@ class Blender:
 
         return blend
 
-    def plot_data(self, idx: int):
+    def plot_data(self, idx: int) -> None:
         import matplotlib.pyplot as plt
 
         _, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 8))
