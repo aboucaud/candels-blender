@@ -70,7 +70,7 @@ def create_image_set(blender: Blender, n_blends: int, outdir: Path,
               help='Ratio of the input galaxies used only for the test set')
 @click.option('-e', '--excluded_type',
               type=click.Choice(['irr', 'disk', 'sph', 'sphd']),
-              multiple=True, default=('irr',), show_default=True,
+              multiple=True,
               help='Excluded galaxy types')
 @click.option('-d', '--datapath',
               type=click.Path(exists=True),
