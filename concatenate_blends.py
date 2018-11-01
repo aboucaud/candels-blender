@@ -93,7 +93,7 @@ def concatenate_seg(path: str, prefix: str, method: str = None) -> None:
             seg = np.load(path / SEG_TMP.format(prefix=prefix, idx=idx))
             imgmain[idx] = method(seg)
 
-    np.save(path / f'{prefix}_labels.npy', imgmain.astype(SEG_DTYPE))
+    np.save(path / f'{prefix}_masks.npy', imgmain.astype(SEG_DTYPE))
 
 
 def segmap_identity(array: np.array) -> np.array:
