@@ -7,6 +7,7 @@ import numpy as np
 
 from blender import Blender, Blend
 from blender.catalog import blend2cat, CATALOG_HEADER
+from blender.segmap import mask_out_pixels
 
 from astropy.visualization import simple_norm
 import matplotlib.pyplot as plt
@@ -24,6 +25,25 @@ def plot_img(img, seg, gal_idx, idx: int, outdir: str = '.') -> None:
     plt.tight_layout()
     plt.savefig(f'{outdir}/indiv_galaxy_{idx:06d}.png', dpi=300)
     plt.close()
+
+
+def create_full_set(blender, outdir):
+    outdir = outdir / 'check_images'
+    if not outdir.exists():
+        outdir.mkdir()
+
+    n_imgs = len(blender.data)
+
+    msg = f'Producing visualizations'
+    with click.progressbar(range(n_imgs), label=msg) as bar:
+        for img_id in bar:
+            img = blender.data[img_id].copy()
+            seg = blender.seg[img_id].copy()
+            segval = seg[64, 64]
+
+            masked_img = mask_out_pixels(img, seg, segval)
+            masked_seg = blender.clean_seg(img_id)
+            plot_img(masked_img, masked_seg, img_id, img_id, outdir)
 
 
 def create_image_set(blender: Blender, outdir: Path, test_set=False) -> None:
@@ -126,8 +146,9 @@ def main(n_blend, excluded_type, mag_low, mag_high,
     n_test = int(test_ratio * n_blend)
     n_train = n_blend - n_test
 
-    create_image_set(blender, outdir, test_set=False)
-    create_image_set(blender, outdir, test_set=True)
+    # create_image_set(blender, outdir, test_set=False)
+    # create_image_set(blender, outdir, test_set=True)
+    create_full_set(blender, outdir)
 
     click.echo(message=f"Images stored in {outdir}")
 
