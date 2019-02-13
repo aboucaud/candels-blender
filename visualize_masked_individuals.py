@@ -13,7 +13,8 @@ from astropy.visualization import simple_norm
 import matplotlib.pyplot as plt
 
 
-def plot_img(img, seg, gal_idx, idx: int, outdir: str = '.') -> None:
+def plot_img(img: np.ndarray, seg: np.ndarray,
+             gal_idx: int, outfile: Path) -> None:
     fig, axes = plt.subplots(nrows=1, ncols=3, sharex=True, sharey=True, figsize=(18, 6))
     norm = simple_norm(img, stretch='log')
     axes[0].imshow(img)
@@ -23,11 +24,11 @@ def plot_img(img, seg, gal_idx, idx: int, outdir: str = '.') -> None:
     for ax in axes:
         ax.set_axis_off()
     plt.tight_layout()
-    plt.savefig(f'{outdir}/indiv_galaxy_{idx:06d}.png', dpi=300)
+    plt.savefig(outfile, dpi=300)
     plt.close()
 
 
-def create_full_set(blender, outdir):
+def create_full_set(blender: Blender, outdir: Path):
     outdir = outdir / 'check_images'
     if not outdir.exists():
         outdir.mkdir()
@@ -37,13 +38,16 @@ def create_full_set(blender, outdir):
     msg = f'Producing visualizations'
     with click.progressbar(range(n_imgs), label=msg) as bar:
         for img_id in bar:
+            outfile = outdir / f'indiv_galaxy_{img_id:06d}.png'
+            if outfile.exists():
+                continue
             img = blender.data[img_id].copy()
             seg = blender.seg[img_id].copy()
             segval = seg[64, 64]
 
             masked_img = mask_out_pixels(img, seg, segval)
             masked_seg = blender.clean_seg(img_id)
-            plot_img(masked_img, masked_seg, img_id, img_id, outdir)
+            plot_img(masked_img, masked_seg, img_id, outfile)
 
 
 def create_image_set(blender: Blender, outdir: Path, test_set=False) -> None:
