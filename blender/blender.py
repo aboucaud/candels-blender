@@ -1,8 +1,9 @@
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, Union, Optional
+from pathlib import Path
 
-import numpy as np
-import pandas as pd
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
 from numpy import ndarray as Stamp  # pragma: no cover
 from numpy.random import RandomState
 
@@ -10,6 +11,7 @@ from .core import Galaxy, Blend
 from .segmap import normalize_segmap
 from .segmap import mask_out_pixels
 
+PathType = Union[Path, str]
 
 class BlendShiftError(Exception):
     pass
@@ -23,7 +25,7 @@ class Blender:
     img_dtype = np.float32
     seg_dtype = np.uint8
 
-    def __init__(self, imgpath: str, segpath: str, catpath: str,
+    def __init__(self, imgpath: PathType, segpath: PathType, catpath: PathType,
                  train_test_ratio: float = 0.2,
                  magdiff: int = 2, raddiff: int = 4, seed: int = 42) -> None:
         self.data = np.load(imgpath).astype(self.img_dtype, copy=False)
@@ -53,7 +55,7 @@ class Blender:
         return Galaxy(idx, *self.cat.iloc[idx][galfields])
 
     def original_stamp(self, gal: Galaxy,
-                       norm_segmap: bool = False) -> Tuple[Stamp]:
+                       norm_segmap: bool = False) -> Tuple[Stamp, Stamp]:
         gal_id = gal.cat_id
 
         img = self.data[gal_id].copy()
@@ -64,7 +66,7 @@ class Blender:
 
         return img, seg
 
-    def masked_stamp(self, gal: Galaxy) -> Tuple[Stamp]:
+    def masked_stamp(self, gal: Galaxy) -> Tuple[Stamp, Stamp]:
         gal_id = gal.cat_id
 
         img = self.data[gal_id].copy()
@@ -147,7 +149,7 @@ class Blender:
 
         return gal
 
-    def random_pair(self, from_test: bool = False) -> Tuple[Galaxy]:
+    def random_pair(self, from_test: bool = False) -> Tuple[Galaxy, Galaxy]:
         "Pick a random pair of galaxies with specific flux constrains"
         gal1 = self.random_galaxy(from_test)
         gal2 = self.random_galaxy(from_test)
@@ -156,7 +158,7 @@ class Blender:
 
         return gal1, gal2
 
-    def random_shift(self, gal1: Galaxy, gal2: Galaxy) -> List[int]:
+    def random_shift(self, gal1: Galaxy, gal2: Galaxy) -> Optional[List[int]]:
         # Min radius has to be the biggest of both effective radii
         rad_min = max(gal1.rad, gal2.rad)
         # Max radius is defined as a factor of the smallest effective radius
@@ -177,7 +179,7 @@ class Blender:
         return coords
 
     def next_blend(self, from_test: bool = False,
-                   masked: bool = True) -> Blend:
+                   masked: bool = True) -> Optional[Blend]:
         gal1, gal2 = self.random_pair(from_test)
 
         try:
@@ -187,7 +189,7 @@ class Blender:
             logger.info(
                 f"Issue while blending galaxies {gal1.gal_id} and "
                 f"{gal2.gal_id}")
-            blend = None
+            return None
 
         return blend
 
