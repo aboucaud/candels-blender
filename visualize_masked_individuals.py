@@ -85,7 +85,7 @@ def create_image_set(blender: Blender, outdir: Path, test_set=False) -> None:
             gal_id = indices[img_id]
             gal = blender.galaxy(gal_id)
             img, seg = blender.masked_stamp(gal)
-            plot_img(img, seg, gal_id, outdir)
+            plot_img(img, seg, gal_id, img_id, outdir)
 
 
 @click.command()
