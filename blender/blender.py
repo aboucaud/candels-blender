@@ -1,8 +1,9 @@
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, Union, Optional
+from pathlib import Path
 
-import numpy as np
-import pandas as pd
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
 from numpy import ndarray as Stamp  # pragma: no cover
 from numpy.random import RandomState
 
@@ -10,6 +11,7 @@ from blender.core import Galaxy, Blend
 from blender.segmap import normalize_segmap
 from blender.segmap import mask_out_pixels
 
+PathType = Union[Path, str]
 
 class BlendShiftError(Exception):
     pass
@@ -23,7 +25,7 @@ class Blender:
     img_dtype = np.float32
     seg_dtype = np.uint8
 
-    def __init__(self, imgpath: str, segpath: str, catpath: str,
+    def __init__(self, imgpath: PathType, segpath: PathType, catpath: PathType,
                  train_test_ratio: float = 0.2,
                  magdiff: int = 2, raddiff: int = 4, seed: int = 42) -> None:
         self.data = np.load(imgpath).astype(self.img_dtype, copy=False)
@@ -49,11 +51,12 @@ class Blender:
         self.test_idx = test
 
     def galaxy(self, idx: int) -> Galaxy:
-        galfields = ['ID', 'mag', 'radius', 'z', 'galtype']
+        galfields = ["ID", "mag", "radius", "z", "galtype"]
         return Galaxy(idx, *self.cat.iloc[idx][galfields])
 
-    def original_stamp(self, gal: Galaxy,
-                       norm_segmap: bool = False) -> Tuple[Stamp]:
+    def original_stamp(self,
+                       gal: Galaxy,
+                       norm_segmap: bool = False) -> Tuple[Stamp, Stamp]:
         gal_id = gal.cat_id
 
         img = self.data[gal_id].copy()
@@ -64,7 +67,7 @@ class Blender:
 
         return img, seg
 
-    def masked_stamp(self, gal: Galaxy) -> Tuple[Stamp]:
+    def masked_stamp(self, gal: Galaxy) -> Tuple[Stamp, Stamp]:
         gal_id = gal.cat_id
 
         img = self.data[gal_id].copy()
@@ -88,7 +91,7 @@ class Blender:
                         1, 0).astype(self.seg_dtype)
 
     def pad(self, array) -> Stamp:
-        return np.pad(array, self.img_size // 2, mode='constant')
+        return np.pad(array, self.img_size // 2, mode="constant")
 
     def crop(self, array) -> Stamp:
         padding = self.img_size // 2
@@ -147,7 +150,7 @@ class Blender:
 
         return gal
 
-    def random_pair(self, from_test: bool = False) -> Tuple[Galaxy]:
+    def random_pair(self, from_test: bool = False) -> Tuple[Galaxy, Galaxy]:
         "Pick a random pair of galaxies with specific flux constrains"
         gal1 = self.random_galaxy(from_test)
         gal2 = self.random_galaxy(from_test)
@@ -156,7 +159,7 @@ class Blender:
 
         return gal1, gal2
 
-    def random_shift(self, gal1: Galaxy, gal2: Galaxy) -> List[int]:
+    def random_shift(self, gal1: Galaxy, gal2: Galaxy) -> Optional[List[int]]:
         # Min radius has to be the biggest of both effective radii
         rad_min = max(gal1.rad, gal2.rad)
         # Max radius is defined as a factor of the smallest effective radius
@@ -176,8 +179,9 @@ class Blender:
 
         return coords
 
-    def next_blend(self, from_test: bool = False,
-                   masked: bool = True) -> Blend:
+    def next_blend(self,
+                   from_test: bool = False,
+                   masked: bool = True) -> Optional[Blend]:
         gal1, gal2 = self.random_pair(from_test)
 
         try:
@@ -187,23 +191,30 @@ class Blender:
             logger.info(
                 f"Issue while blending galaxies {gal1.gal_id} and "
                 f"{gal2.gal_id}")
-            blend = None
+            return None
 
         return blend
 
     def plot_data(self, idx: int) -> None:
         import matplotlib.pyplot as plt
 
-        _, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 8))
-        axes[0].imshow(self.data[idx], origin='lower')
-        axes[0].axis('off')
-        axes[0].set_title('Image')
-        axes[1].imshow(normalize_segmap(self.seg[idx]), origin='lower')
-        axes[1].axis('off')
-        axes[1].set_title('Actual segmentation map')
-        axes[2].imshow(self.clean_seg(idx), origin='lower')
-        axes[2].axis('off')
-        axes[2].set_title('Single object segmentation')
+        title_list = [
+            "Galaxy stamp",
+            "CANDELS segmentation map",
+            "Cleaned segmentation map"
+        ]
+
+        fig, axes = plt.subplots(1, 3, figsize=(12, 8), tight_layout=True)
+
+        axes[0].imshow(self.data[idx], origin="lower")
+        axes[1].imshow(normalize_segmap(self.seg[idx]), origin="lower")
+        axes[2].imshow(self.clean_seg(idx), origin="lower")
+
+        for ax, title in zip(axes, title_list):
+            ax.set_axis_off()
+            ax.set_title(title)
+
+        return fig
 
     def plot_blend(self, idx1: int, idx2: int):
         import matplotlib.pyplot as plt
@@ -218,18 +229,20 @@ class Blender:
             blend.segmap[1],
             blend.segmap.sum(axis=0)]
         titlelist = [
-            f'blend image {g1.gal_id} - {g2.gal_id}',
-            f'{g1.type} - mag:{g1.mag:.2f} - rad:{g1.rad:.2f}',
-            f'{g2.type} - mag:{g2.mag:.2f} - rad:{g2.rad:.2f}',
-            f'blend segmap {g1.cat_id} - {g2.cat_id}']
+            f"blend image {g1.gal_id} - {g2.gal_id}",
+            f"{g1.type} - mag:{g1.mag:.2f} - rad:{g1.rad:.2f}",
+            f"{g2.type} - mag:{g2.mag:.2f} - rad:{g2.rad:.2f}",
+            f"blend segmap {g1.cat_id} - {g2.cat_id}"]
         norm = viz.ImageNormalize(blend.img,
                                   interval=viz.MinMaxInterval(),
                                   stretch=viz.SqrtStretch())
-        _, axes = plt.subplots(1, 4, figsize=(16, 8))
+        fig, axes = plt.subplots(1, 4, figsize=(16, 8), tight_layout=True)
         for i, image in enumerate(imglist):
             if i == 0:
-                axes[i].imshow(image, origin='lower', norm=norm)
+                axes[i].imshow(image, origin="lower", norm=norm)
             else:
-                axes[i].imshow(image, origin='lower')
-            axes[i].axis('off')
+                axes[i].imshow(image, origin="lower")
+            axes[i].set_axis_off()
             axes[i].set_title(titlelist[i])
+
+        return fig
