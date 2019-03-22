@@ -7,9 +7,9 @@ import pandas as pd  # type: ignore
 from numpy import ndarray as Stamp  # pragma: no cover
 from numpy.random import RandomState
 
-from .core import Galaxy, Blend
-from .segmap import normalize_segmap
-from .segmap import mask_out_pixels
+from blender.core import Galaxy, Blend
+from blender.segmap import normalize_segmap
+from blender.segmap import mask_out_pixels
 
 PathType = Union[Path, str]
 

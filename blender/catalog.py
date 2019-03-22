@@ -2,7 +2,7 @@ from typing import List, Sequence
 
 import numpy as np  # type: ignore
 
-from .core import Blend, Galaxy
+from blender.core import Blend, Galaxy
 
 CATALOG_HEADER: Sequence[str] = (
     "id",
