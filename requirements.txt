@@ -1,6 +1,6 @@
 scipy
 numpy
-jupyter
 pandas
 matplotlib
 click
+astropy
