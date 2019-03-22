@@ -26,7 +26,7 @@ def plot_img(img, seg, gal_idx, idx: int, outdir: str = '.') -> None:
     plt.close()
 
 
-def create_image_set(blender: Blender, outdir: Path, test_set=False) -> None:
+def create_image_set(blender: Blender, outdir: Path) -> None:
     """
     Use a Blender instance to output stamps of blended galaxies and
     their associated segmentation mask, plus a catalog of these sources.
@@ -43,22 +43,13 @@ def create_image_set(blender: Blender, outdir: Path, test_set=False) -> None:
         switch between the training and testing galaxy split
 
     """
-    if test_set:
-        indices = blender.test_idx
-        outdir = outdir / 'test'
-    else:
-        indices = blender.train_idx
-        outdir = outdir / 'train'
-
-    if not outdir.exists():
-        outdir.mkdir()
-
-    n_imgs = len(indices)
+    test_indices = blender.test_idx
+    n_imgs = len(test_indices)
 
     msg = f'Producing visualizations'
     with click.progressbar(range(n_imgs), label=msg) as bar:
         for img_id in bar:
-            gal_id = indices[img_id]
+            gal_id = test_indices[img_id]
             gal = blender.galaxy(gal_id)
             img, seg = blender.masked_stamp(gal)
             plot_img(img, seg, gal_id, img_id, outdir)
@@ -126,8 +117,7 @@ def main(n_blend, excluded_type, mag_low, mag_high,
     n_test = int(test_ratio * n_blend)
     n_train = n_blend - n_test
 
-    create_image_set(blender, outdir, test_set=False)
-    create_image_set(blender, outdir, test_set=True)
+    create_image_set(blender, outdir)
 
     click.echo(message=f"Images stored in {outdir}")
 
