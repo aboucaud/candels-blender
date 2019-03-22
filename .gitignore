@@ -81,5 +81,4 @@ config.yml
 
 *.npy
 *.csv
-output-*
-data
+output-*/

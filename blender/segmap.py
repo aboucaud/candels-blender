@@ -1,10 +1,10 @@
-import numpy as np  # type: ignore
+import numpy as np
 from numpy import ndarray as Stamp  # pragma: no cover
-from scipy.ndimage import binary_dilation  # type: ignore
+from scipy.ndimage import binary_dilation
 
 
 def normalize_segmap(segmap: Stamp) -> Stamp:
-    new_segmap: Stamp = segmap.copy()
+    new_segmap = segmap.copy()
     val_list = np.unique(segmap)
     for idx, val in enumerate(val_list):
         new_segmap[new_segmap == val] = idx
