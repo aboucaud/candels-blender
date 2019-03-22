@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
-from typing import Optional, Callable
 
 import click
-import numpy as np  # type: ignore
+import numpy as np
 
 from blender import segmap
 
@@ -13,7 +12,8 @@ IMG_DTYPE = np.float32
 SEG_DTYPE = np.uint8
 
 
-def concatenate_img(path: Path, prefix: str, with_labels: bool = False) -> None:
+def concatenate_img(path: str, prefix: str,
+                    with_labels: bool = False) -> None:
     """
     Create a stack of blends from the individual images.
 
@@ -57,7 +57,7 @@ def concatenate_img(path: Path, prefix: str, with_labels: bool = False) -> None:
         np.save(path / f"{prefix}_labels.npy", img_indiv.astype(IMG_DTYPE))
 
 
-def concatenate_seg(path: Path, prefix: str, method: Optional[Callable] = None) -> None:
+def concatenate_seg(path: str, prefix: str, method: str = None) -> None:
     """
     Create a stack of masks from the individual files.
 
