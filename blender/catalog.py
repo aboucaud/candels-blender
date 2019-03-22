@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 
-from .core import Blend, Galaxy
+from blender.core import Blend, Galaxy
 
 CATALOG_HEADER = (
     "id",
