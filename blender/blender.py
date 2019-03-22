@@ -51,10 +51,11 @@ class Blender:
         self.test_idx = test
 
     def galaxy(self, idx: int) -> Galaxy:
-        galfields = ['ID', 'mag', 'radius', 'z', 'galtype']
+        galfields = ["ID", "mag", "radius", "z", "galtype"]
         return Galaxy(idx, *self.cat.iloc[idx][galfields])
 
-    def original_stamp(self, gal: Galaxy,
+    def original_stamp(self,
+                       gal: Galaxy,
                        norm_segmap: bool = False) -> Tuple[Stamp, Stamp]:
         gal_id = gal.cat_id
 
@@ -90,7 +91,7 @@ class Blender:
                         1, 0).astype(self.seg_dtype)
 
     def pad(self, array) -> Stamp:
-        return np.pad(array, self.img_size // 2, mode='constant')
+        return np.pad(array, self.img_size // 2, mode="constant")
 
     def crop(self, array) -> Stamp:
         padding = self.img_size // 2
@@ -178,7 +179,8 @@ class Blender:
 
         return coords
 
-    def next_blend(self, from_test: bool = False,
+    def next_blend(self,
+                   from_test: bool = False,
                    masked: bool = True) -> Optional[Blend]:
         gal1, gal2 = self.random_pair(from_test)
 
@@ -196,16 +198,23 @@ class Blender:
     def plot_data(self, idx: int) -> None:
         import matplotlib.pyplot as plt
 
-        _, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 8))
-        axes[0].imshow(self.data[idx], origin='lower')
-        axes[0].axis('off')
-        axes[0].set_title('Image')
-        axes[1].imshow(normalize_segmap(self.seg[idx]), origin='lower')
-        axes[1].axis('off')
-        axes[1].set_title('Actual segmentation map')
-        axes[2].imshow(self.clean_seg(idx), origin='lower')
-        axes[2].axis('off')
-        axes[2].set_title('Single object segmentation')
+        title_list = [
+            "Galaxy stamp",
+            "CANDELS segmentation map",
+            "Cleaned segmentation map"
+        ]
+
+        fig, axes = plt.subplots(1, 3, figsize=(12, 8), tight_layout=True)
+
+        axes[0].imshow(self.data[idx], origin="lower")
+        axes[1].imshow(normalize_segmap(self.seg[idx]), origin="lower")
+        axes[2].imshow(self.clean_seg(idx), origin="lower")
+
+        for ax, title in zip(axes, title_list):
+            ax.set_axis_off()
+            ax.set_title(title)
+
+        return fig
 
     def plot_blend(self, idx1: int, idx2: int):
         import matplotlib.pyplot as plt
@@ -220,18 +229,20 @@ class Blender:
             blend.segmap[1],
             blend.segmap.sum(axis=0)]
         titlelist = [
-            f'blend image {g1.gal_id} - {g2.gal_id}',
-            f'{g1.type} - mag:{g1.mag:.2f} - rad:{g1.rad:.2f}',
-            f'{g2.type} - mag:{g2.mag:.2f} - rad:{g2.rad:.2f}',
-            f'blend segmap {g1.cat_id} - {g2.cat_id}']
+            f"blend image {g1.gal_id} - {g2.gal_id}",
+            f"{g1.type} - mag:{g1.mag:.2f} - rad:{g1.rad:.2f}",
+            f"{g2.type} - mag:{g2.mag:.2f} - rad:{g2.rad:.2f}",
+            f"blend segmap {g1.cat_id} - {g2.cat_id}"]
         norm = viz.ImageNormalize(blend.img,
                                   interval=viz.MinMaxInterval(),
                                   stretch=viz.SqrtStretch())
-        _, axes = plt.subplots(1, 4, figsize=(16, 8))
+        fig, axes = plt.subplots(1, 4, figsize=(16, 8), tight_layout=True)
         for i, image in enumerate(imglist):
             if i == 0:
-                axes[i].imshow(image, origin='lower', norm=norm)
+                axes[i].imshow(image, origin="lower", norm=norm)
             else:
-                axes[i].imshow(image, origin='lower')
-            axes[i].axis('off')
+                axes[i].imshow(image, origin="lower")
+            axes[i].set_axis_off()
             axes[i].set_title(titlelist[i])
+
+        return fig
