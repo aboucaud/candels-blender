@@ -34,7 +34,7 @@ def create_image_set(blender: Blender, n_blends: int, outdir: Path,
     """
     prefix = "test" if test_set else "train"
 
-    outcat = outdir / f"{prefix}_blend_cat_emille.csv"
+    outcat = outdir / f"{prefix}_catalogue.csv"
 
     with open(outcat, "w") as f:
         output = csv.writer(f)
