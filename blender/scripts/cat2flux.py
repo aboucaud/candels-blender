@@ -22,7 +22,7 @@ def main(image_dir, zeropoint, prefix):
     """Create an array with the flux of the blended galaxies"""
     path = Path.cwd() / image_dir
 
-    catalog = path / f'{prefix}_blend_cat.csv'
+        catalog = path / f'{prefix}_catalogue.csv'
     output_file = path / f'{prefix}_flux.npy'
 
     df = pd.read_csv(catalog)
