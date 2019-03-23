@@ -14,6 +14,9 @@ def normalize_segmap(segmap: Stamp) -> Stamp:
     return new_segmap
 
 
+def mask_out_pixels(img: Stamp, segmap: Stamp, segval: Stamp,
+                    n_iter: int = 5, shuffle: bool = False,
+                    noise_factor: int = 1) -> Stamp:
     """
     Replace central galaxy neighbours with background noise
 
@@ -22,22 +25,35 @@ def normalize_segmap(segmap: Stamp) -> Stamp:
     realisation of the background noise.
 
     """
+    masked_img = img.copy()
     # Create binary masks of all segmented sources
     sources = binary_dilation(segmap, iterations=n_iter)
-    noise = np.logical_not(sources)
+    background_mask = np.logical_not(sources)
     # Create binary mask of the central galaxy
     central_source = binary_dilation(np.where(segmap == segval, 1, 0),
                                      iterations=n_iter)
     # Compute the binary mask of all sources BUT the central galaxy
     sources_except_central = np.logical_xor(sources, central_source)
-    # Select random pixels from the noise in the image
-    n_pixels_to_fill_in = sources_except_central.sum()
-    noise_pixels = np.random.choice(img[noise], size=n_pixels_to_fill_in)
-    # Fill in the voids with these pixels
-    masked_img = img.copy()
-    masked_img[sources_except_central] = noise_pixels
 
-    return masked_img
+    centralseg = binary_dilation(np.where(segmap == segval, 1, 0),
+                                 iterations=n_iter)
+    if shuffle:
+        # Select random pixels from the noise in the image
+        n_pixels_to_fill_in = sources_except_central.sum()
+        random_background_pixels = np.random.choice(
+            img[background_mask],
+            size=n_pixels_to_fill_in
+        )
+        # Fill in the voids with these pixels
+        masked_img[sources_except_central] = random_background_pixels
+    else:
+        # Create a realisation of the background for the std value
+        background_std = np.std(img[background_mask])
+        random_background = np.random.normal(scale=background_std, size=img.shape)
+        masked_img[sources_except_central] = random_background[sources_except_central]
+        masked_img += noise_factor * np.random.normal(scale=background_std, size=img.shape)
+
+    return masked_img.astype(img.dtype)
 
 
 def gg_masks(segmap: Stamp, dtype=np.uint8) -> np.array:
