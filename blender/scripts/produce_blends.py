@@ -62,14 +62,14 @@ def create_image_set(blender: Blender, n_blends: int, outdir: Path,
 @click.option(
     "--mag_low",
     type=float,
-    default=18,
+    default=0,
     show_default=True,
     help="Lowest galaxy magnitude",
 )
 @click.option(
     "--mag_high",
     type=float,
-    default=23,
+    default=100,
     show_default=True,
     help="Highest galaxy magnitude",
 )
