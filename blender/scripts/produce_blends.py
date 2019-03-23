@@ -50,8 +50,15 @@ def create_image_set(blender: Blender, n_blends: int, outdir: Path,
                 save_img(blend, blend_id, prefix, outdir)
 
 
-@click.command()
-@click.argument("n_blend", type=int)
+@click.command("produce")
+@click.option(
+    "-n",
+    "--n_blends",
+    type=int,
+    default=100,
+    show_default=True,
+    help="Number of blends to produce",
+)
 @click.option(
     "--mag_low",
     type=float,
@@ -89,10 +96,16 @@ def create_image_set(blender: Blender, n_blends: int, outdir: Path,
     help="Ratio of the input galaxies used only for the test set",
 )
 @click.option(
+    "-c",
+    "--use_clean_galaxies",
+    is_flag=True,
+    help="Use the subsample of visually inspected galaxy stamps from CANDELS",
+)
+@click.option(
     "-e",
     "--excluded_type",
     type=click.Choice(["irr", "disk", "sph", "sphd"]),
-              multiple=True,
+    multiple=True,
     help="Excluded galaxy types",
 )
 @click.option(
@@ -104,21 +117,26 @@ def create_image_set(blender: Blender, n_blends: int, outdir: Path,
     help="Path to data files",
 )
 @click.option(
-    "-s", "--seed", type=int, default=42, show_default=True, help="Random seed"
+    "-s",
+    "--seed",
+    type=int,
+    default=42,
+    show_default=True,
+    help="Random seed",
 )
-def main(n_blend, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
-         test_ratio, datapath, seed):
+def main(n_blends, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
+         use_clean_galaxies, test_ratio, datapath, seed):
     """
-    Produce N_BLEND stamps of HST blended galaxies with their individual masks
+    Produce stamps of CANDELS blended galaxies with their individual masks
     """
     # Define the various paths and create directories
     cwd = Path.cwd()
     datapath = cwd / datapath
-    instamps = datapath / "candels.npy"
-    insegmaps = datapath / "candels_seg.npy"
-    incat = datapath / "candels.csv"
+    input_stamps = datapath / "candels_img.npy"
+    input_segmaps = datapath / "candels_seg.npy"
+    input_catalog = datapath / "candels_cat.csv"
 
-    outdir = cwd / f"output-s_{seed}-n_{n_blend}"
+    outdir = cwd / f"output-s_{seed}-n_{n_blends}"
     if not outdir.exists():
         outdir.mkdir()
     outlog = outdir / "blender.log"
@@ -130,10 +148,10 @@ def main(n_blend, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
     )
 
     blender = Blender(
-        instamps,
-        insegmaps,
-        incat,
-                      train_test_ratio=test_ratio,
+        input_stamps,
+        input_segmaps,
+        input_catalog,
+        train_test_ratio=test_ratio,
         magdiff=mag_diff,
         raddiff=rad_diff,
         seed=seed,
@@ -144,11 +162,12 @@ def main(n_blend, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
         "\n"
         "Configuration\n"
         "=============\n"
-        f"Number of blends: {n_blend}\n"
+        f"Number of blends: {n_blends}\n"
         f"Seed: {seed}\n"
         "\n"
         "Catalog cuts\n"
         "------------\n"
+        f"Excluding flagged stamps: {use_clean_galaxies}\n"
         f"Excluded galaxy types: {excluded_type}\n"
         f"Lowest magnitude: {mag_low}\n"
         f"Highest magnitude: {mag_high}\n"
@@ -157,9 +176,11 @@ def main(n_blend, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
         "----------------\n"
         f"Top difference in magnitude between galaxies: {mag_diff}\n"
         f"Top distance between galaxies as a fraction of radius: {rad_diff}\n"
-        )
+    )
 
     # Apply cuts to the galaxy catalog
+    if use_clean_galaxies:
+        blender.make_cut(blender.cat.clean)
     click.echo(
         f"Selecting galaxies in the magnitude range {mag_low} < m < {mag_high}"
     )
@@ -169,9 +190,14 @@ def main(n_blend, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
         click.echo(f"Excluding {galtype} galaxies")
         blender.make_cut(blender.cat.galtype != galtype)
 
+    click.echo(
+        f"After the cuts, there are {blender.n_gal} individual galaxies "
+        "left in the catalog."
+    )
+
     # Compute the train/test splits
-    n_test = int(test_ratio * n_blend)
-    n_train = n_blend - n_test
+    n_test = int(test_ratio * n_blends)
+    n_train = n_blends - n_test
 
     create_image_set(blender, n_train, outdir)
     create_image_set(blender, n_test, outdir, test_set=True)

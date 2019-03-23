@@ -101,7 +101,7 @@ def segmap_identity(array: np.array) -> np.array:
     return array.astype(SEG_DTYPE)
 
 
-@click.command()
+@click.command("concatenate")
 @click.argument("image_dir", type=click.Path(exists=True))
 @click.argument(
     "method",
