@@ -4,6 +4,9 @@ from scipy.ndimage import binary_dilation  # type: ignore
 
 
 def normalize_segmap(segmap: Stamp) -> Stamp:
+    """
+    Reindexes the various objects in the current segmap
+    """
     new_segmap: Stamp = segmap.copy()
     val_list = np.unique(segmap)
     for idx, val in enumerate(val_list):
@@ -11,23 +14,14 @@ def normalize_segmap(segmap: Stamp) -> Stamp:
     return new_segmap
 
 
-def mask_out_pixels(img: Stamp, seg: Stamp, segval: Stamp,
-                    noise_factor: int = 1, n_iter: int = 5) -> Stamp:
-    bseg = binary_dilation(seg, iterations=n_iter)
-    centralseg = binary_dilation(np.where(seg == segval, 1, 0),
-                                 iterations=n_iter)
-    final_mask = np.logical_xor(bseg, centralseg)
-    masked_std = np.std(img * np.logical_not(bseg))
-    masked_img = img * ~final_mask
-    mask_fill = final_mask * np.random.normal(scale=masked_std, size=img.shape)
-    noise_map = np.random.normal(scale=masked_std, size=img.shape)
-    new_img = masked_img + mask_fill + noise_factor * noise_map
+    """
+    Replace central galaxy neighbours with background noise
 
-    return new_img.astype(img.dtype)
+    Basic recipe to replace the detected sources around the central galaxy
+    with either randomly selected pixels from the background, or a random
+    realisation of the background noise.
 
-
-def mask_out_pixels_2(img: Stamp, segmap: Stamp, segval: Stamp,
-                      n_iter: int = 5) -> Stamp:
+    """
     # Create binary masks of all segmented sources
     sources = binary_dilation(segmap, iterations=n_iter)
     noise = np.logical_not(sources)
@@ -46,22 +40,29 @@ def mask_out_pixels_2(img: Stamp, segmap: Stamp, segval: Stamp,
     return masked_img
 
 
-def background_overlap_galaxies(segmap: Stamp, dtype=np.uint8) -> Stamp:
-    """Convert label array to one hot encoding as defined in the UNet"""
-    segmap = segmap.astype(bool)
-    s1, s2 = segmap
-    array_list = [~s1 & ~s2,     # background
-                  s1 & s2,       # overlap
-                  s1 ^ s1 & s2,  # s1 without overlap
-                  s2 ^ s1 & s2]  # s2 without overlap
-
-    output = np.concatenate([np.expand_dims(arr, axis=-1)
-                             for arr in array_list], axis=-1)
-
-    return output.astype(dtype)
+def gg_masks(segmap: Stamp, dtype=np.uint8) -> np.array:
+    """
+    Returns the given array cast in a specific type.
+    """
+    return segmap.astype(dtype)
 
 
-def overlap_galaxies(segmap: Stamp, dtype=np.uint8) -> Stamp:
+def ogg_masks(segmap: Stamp, dtype=np.uint8) -> Stamp:
+    """
+    Convert galaxy segmaps to a special encoding to predict overlap region.
+
+    OGG stands for Overlap, Galaxy, Galaxy
+
+    The input segmap is of shape (N, N, 2) where NxN is the dimensension
+    of the stamps and the third axes corresponds to the two galaxies,
+    ordered as central first and companion second.
+
+    The output segmap is of shape (N, N, 3). The third axis is ordered as
+      1) mask of overlapping region
+      2) mask of central galaxy
+      3) mask of companion galaxy
+
+    """
     segmap = segmap.astype(bool)
     s1, s2 = segmap
     array_list = [
@@ -72,5 +73,37 @@ def overlap_galaxies(segmap: Stamp, dtype=np.uint8) -> Stamp:
     output = np.concatenate(
         [np.expand_dims(arr, axis=-1)
          for arr in array_list], axis=-1)
+
+    return output.astype(dtype)
+
+
+def bogg_masks(segmap: Stamp, dtype=np.uint8) -> Stamp:
+    """
+    Convert galaxy segmaps to one hot encoding as defined in the UNet.
+
+    BOGG stands for Background, Overlap, Galaxy, Galaxy
+
+    The input segmap is of shape (N, N, 2) where NxN is the dimensension
+    of the stamps and the third axes corresponds to the two galaxies,
+    ordered as central first and companion second.
+
+    The output segmap is of shape (N, N, 4). The third axis is ordered as
+      1) background mask
+      2) mask of overlapping region
+      3) mask of central galaxy - 2)
+      4) mask of companion galaxy - 2)
+
+    This way only each pixel of the NxN blend is assigned one category only.
+
+    """
+    segmap = segmap.astype(bool)
+    s1, s2 = segmap
+    array_list = [~s1 & ~s2,     # background
+                  s1 & s2,       # overlap
+                  s1 ^ s1 & s2,  # s1 without overlap
+                  s2 ^ s1 & s2]  # s2 without overlap
+
+    output = np.concatenate([np.expand_dims(arr, axis=-1)
+                             for arr in array_list], axis=-1)
 
     return output.astype(dtype)
