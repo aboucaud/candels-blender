@@ -1,12 +1,17 @@
-# HST galaxy blender
+CANDELS galaxy blender
+======================
+
+
+Context
+-------
 
 **Initial dataset**: a galaxy catalog and stamps from the public HST CANDELS dataset, plus the associated segmentation masks obtained with SExtractor.  
 
-The code uses this dataset to produce blended galaxies pairs in the form of 128x128, 32 bits images and their associated 128x128x2, binary masks.  
+The code uses this dataset to produce blended galaxies pairs in the form of 128x128, 32 bits images and their association binary segmentation masks.  
 The neighboring objects that could be initially on the stamps are replaced with noise realizations from the background (this may affect the quality of the dataset).  
-The masks of both objects can then be combined (see `concatenate_blends.py`) to create various targets depending on the deblending goal.
 
-## Usage
+Usage
+-----
 
 1. Clone the repository
    ```
@@ -14,46 +19,68 @@ The masks of both objects can then be combined (see `concatenate_blends.py`) to 
    cd candels-blender
    ```
 
-2. Install the dependancies
-   - with [conda](https://www.anaconda.com/download/)
+2. Install the dependencies
+   - with [conda](https://www.anaconda.com/download/) or [miniconda](https://docs.conda.io/en/latest/miniconda.html)
    ```
-   conda env create                  # Use environment.yml to create the 'candel-blender' env
-   source activate candels-blender   # Activate the virtual env
+   conda update conda                # Update conda
+   conda env create                  # Use environment.yml to create the 'candels-blender' env
+   conda activate candels-blender    # Activate the virtual env
    ```
-   - without `conda` (**needs Python 3.6**)
+   - without `conda` (**needs Python 3.6+**)
    ```
-   python -m pip install -r requirements.txt
-   ```
-
-3. Download the data (contact me for now)
-   ```
-   mkdir data
-   # put the three files in this directory
+   python3 -m pip install -r requirements.txt
    ```
 
-4. Use the first script to create the blends and their mask
+3. Install the `candels-blender` package and download the data
    ```
-   python produce_blends.py <number_of_desired_images>
-
-   # 20 000 blends of magnitude above 23.5 without irregular galaxies
-   python produce_blends.py 20000 -e irr --mag_high 23.5
-
-   # Check the full options with
-   python produce_blends.py --help
+   python3 -m pip install .
+   python3 download_data.py
    ```
-   All the images will be placed in a specific directory.
 
-5. Use the second script to merge the images into a single object and create the labels
+4. Use the `candels-blender` command-line interface (CLI) to create your own blend dataset
    ```
-   python concatenate_blends.py output-s_XX-nXXXXX --method overlap_galaxies
+   candels-blender <action>
+   ```
+   There are three actions currently accessible via the `candels-blender` CLI:
+     - `produce`
+     - `concatenate`
+     - `convert`
+   
+   For each action, all the available options are accessible via
+   ```
+   candels-blender <action> --help
+   ```
 
-   # Check the full options with
-   python concatenate_blends.py --help
+Example
+-------
+
+The three available actions are to be used sequentially.
+
+1. Create the blends
    ```
-   This step will produce two files `images.npy` and `labels.npy` in the same directory as the individual images.
+   candels-blender produce -n 20000 --exclude irr --mag_high 23.5 --seed 42 --use_clean_galaxies
+   ```
+   will create 20 000 blends of magnitude above 23.5 without irregular galaxies into a directory called `output-s_42-n_20000` along with 20 000 accompanying segmentation masks and two catalogues `train/test_catalogue.csv`.
+
+2. Format the images, masks and catalogues into three distinct files
+   ```
+   candels-blender concatenate output-s_42-n_20000 --method ogg_masks --delete
+   ```
+   will format the blend stamps and masks into `train/test_blends.npy`, `train/test_ogg_masks.npy` and delete the individual files.
+
+3. Obtain an array of the flux of both individual galaxies
+   ```
+   candels-blender convert output-s_42-n_20000 --zeropoint=25.5
+   ```
+   will use the magnitude of each galaxy, stored in the catalogues, to create the arrays of corresponding flux `train/test_flux.npy`, depending on the zero-point value.
 
 
 ## Example notebooks
 
 You will find a directory with two static notebooks that can help you understand the blending process.  
 They are **not meant to be runnable**.
+
+
+## Authors
+
+- Alexandre Boucaud - _aboucaud_ at _apc_ dot _in2p3.fr_
