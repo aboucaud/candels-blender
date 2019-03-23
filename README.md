@@ -64,13 +64,13 @@ The three available actions are to be used sequentially.
 
 2. Format the images, masks and catalogues into three distinct files
    ```
-   candels-blender concatenate output-s_42-n_20000 --method ogg_masks --delete
+   candels-blender concatenate -d output-s_42-n_20000 --method ogg_masks --delete
    ```
    will format the blend stamps and masks into `train/test_blends.npy`, `train/test_ogg_masks.npy` and delete the individual files.
 
 3. Obtain an array of the flux of both individual galaxies
    ```
-   candels-blender convert output-s_42-n_20000 --zeropoint=25.5
+   candels-blender convert -d output-s_42-n_20000 --zeropoint=25.5
    ```
    will use the magnitude of each galaxy, stored in the catalogues, to create the arrays of corresponding flux `train/test_flux.npy`, depending on the zero-point value.
 
