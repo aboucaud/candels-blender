@@ -11,11 +11,25 @@ def mag2flux(mag, zp):
 
 
 @click.command("convert")
-@click.argument('image_dir', type=click.Path(exists=True))
-@click.option('--zeropoint', default=25.96,
-               help="Magnitude zero point for the conversion to flux")
+@click.option(
+    "-d",
+    "--image_dir",
+    metavar="<image-dir>",
+    type=click.Path(exists=True),
+    required=True,
+)
+@click.option(
+    '--zeropoint',
+    default=25.96,
+    help="Magnitude zero point for the conversion to flux",
+)
 def main(image_dir, zeropoint):
-    """Create an array with the flux of the blended galaxies"""
+    """Create an array with the flux of the blended galaxies.
+
+    Takes the magnitudes from the blend catalogues found in <image_dir>
+    and uses the <zeropoint> to convert to flux.
+
+    """
     path = Path.cwd() / image_dir
 
     for prefix in ["train", "test"]:
