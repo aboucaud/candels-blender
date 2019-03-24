@@ -96,12 +96,6 @@ def create_image_set(blender: Blender, n_blends: int, outdir: Path,
     help="Ratio of the input galaxies used only for the test set",
 )
 @click.option(
-    "-c",
-    "--use_clean_galaxies",
-    is_flag=True,
-    help="Use the subsample of visually inspected galaxy stamps from CANDELS",
-)
-@click.option(
     "-e",
     "--excluded_type",
     type=click.Choice(["irr", "disk", "sph", "sphd"]),
@@ -125,7 +119,7 @@ def create_image_set(blender: Blender, n_blends: int, outdir: Path,
     help="Random seed",
 )
 def main(n_blends, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
-         use_clean_galaxies, test_ratio, datapath, seed):
+         test_ratio, datapath, seed):
     """
     Produce stamps of CANDELS blended galaxies with their individual masks
     """
@@ -139,7 +133,7 @@ def main(n_blends, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
     outdir = cwd / f"output-s_{seed}-n_{n_blends}"
     if not outdir.exists():
         outdir.mkdir()
-    outlog = outdir / "blender.log"
+    outlog = outdir / "candels-blender.log"
 
     logging.basicConfig(
         filename=outlog,
@@ -167,7 +161,6 @@ def main(n_blends, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
         "\n"
         "Catalog cuts\n"
         "------------\n"
-        f"Excluding flagged stamps: {use_clean_galaxies}\n"
         f"Excluded galaxy types: {excluded_type}\n"
         f"Lowest magnitude: {mag_low}\n"
         f"Highest magnitude: {mag_high}\n"
@@ -179,8 +172,6 @@ def main(n_blends, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
     )
 
     # Apply cuts to the galaxy catalog
-    if use_clean_galaxies:
-        blender.make_cut(blender.cat.clean_flag)
     click.echo(
         f"Selecting galaxies in the magnitude range {mag_low} < m < {mag_high}"
     )

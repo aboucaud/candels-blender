@@ -1,7 +1,7 @@
 CANDELS galaxy blender
 ======================
 
-Easily generate realistic images of galaxy blends.
+Easily generate images of galaxy blends from Hubble Space Telescope data.
 
 - [Context](#Context)
 - [Usage](#Usage)
@@ -13,14 +13,15 @@ Context
 
 #### Dataset
 
-The provided input dataset comes from the CANDELS GOLD sample from [Dimauro et al. (2018)](https://academic.oup.com/mnras/article-abstract/478/4/5410/5004864?redirectedFrom=fulltext) and contains 2823 stamps and segmentation maps (128 x 128 pixels) centred around isolated galaxies, and a catalogue of properties in the F160W band for these central galaxies.
+The provided input dataset comes from the CANDELS bulge/disk decomposition dataset from [Dimauro et al. (2018)](https://academic.oup.com/mnras/article-abstract/478/4/5410/5004864?redirectedFrom=fulltext) and contains stamps and segmentation maps (128 x 128 pixels) centred around isolated galaxies, and a reduced catalogue of properties in the F160W band for the central galaxies.
 
-A flag called 'clean_flag' in the catalogue, is the main addition to this dataset. It was obtained after a visual inspection of the stamps to reject all those for which
-- the central galaxy is possibly blended
-- the neighbouring sources are too close or too diffuse
-- the segmentation map does not cover well the sources in the stamp
-- weird artefacts are present in the stamp
-After inspection, only 2 001 stamps are left in the dataset.
+Our addition to the Dimauro dataset is a visual screening of the stamps to reject all those for which
+- the central galaxy is possibly blended,
+- the neighbouring sources are too close or too diffuse,
+- the segmentation map does not cover well the sources in the stamp,
+- weird artefacts are present in the stamp.
+
+The provided dataset contains 2 001 entries.
 
 Usage
 -----
@@ -42,7 +43,7 @@ candels-blender <action> --help
 
 #### `produce`
 
-We select two galaxies from the input dataset. We mask out the neighbours in the image, if any, to obtain two stamps with an individual galaxy at the center (this operation can potentially affect the data quality if not using the `clean_flag` galaxies). We randomly shift one galaxy out of the two and repeat the same operation for the two segmentation maps (which we also refer to as _masks_ since there is only one galaxy left).
+We select two galaxies from the input dataset. We mask out the neighbours in the image, if any, to obtain two stamps with an individual galaxy at the center. We randomly shift one galaxy out of the two and repeat the same operation for the two segmentation maps (which we also refer to as _masks_ since there is only one galaxy left).
 The output catalogue contains for each entry the distance between them, the corresponding shift in _x_ and _y_-axis in pixels and the properties of both galaxies. 
 
 We implement a train/test split for machine learning purposes. Before we produce any galaxy pair, we make sure to randomly separate input galaxies into two categories. Therefore, despite the inherent redundancy of galaxies within each split, the test sample will not contain any galaxy used in the training one.
@@ -92,9 +93,9 @@ The three available actions are to be used sequentially.
 
 ### 1) Create the blends and catalogue
 ```bash
-candels-blender produce -n 20000 --exclude irr --mag_high 23.5 --test_ratio 0.2 --seed 42 --use_clean_galaxies
+candels-blender produce -n 20000 --exclude irr --mag_high 23.5 --test_ratio 0.2 --seed 42
 ```
-will prepare 20 000 pairs of galaxies of magnitude above 23.5 using the sample of visualy screened galaxies minus the irregular ones, with a train/test ratio of 70/30 %, into a directory called `output-s_42-n_20000` along with the accompanying segmentation masks and catalogues `train/test_catalogue.csv`.
+will prepare 20 000 pairs of galaxies of magnitude above 23.5 excluding the irregular galaxies, with a train/test ratio of 70/30 %, into a directory called `output-s_42-n_20000` along with the accompanying segmentation masks and catalogues `train/test_catalogue.csv`.
 
 ### 2) Format the images and masks into distinct files
 ```bash
