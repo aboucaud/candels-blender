@@ -109,12 +109,9 @@ candels-blender convert -d output-s_42-n_20000 --zeropoint=25.5
 will use the magnitude of each galaxy, stored in the catalogues, to create the arrays of corresponding flux `train/test_flux.npy`, depending on the zero-point value.
 
 
+## Notebook with figures
 
-
-## Example notebooks
-
-You will find a directory with two static notebooks that can help you understand the blending process.  
-They are **not meant to be runnable**.
+A notebook that briefly describes the blending process is available [here](notebooks/manual_blender.ipynb).
 
 
 ## Authors

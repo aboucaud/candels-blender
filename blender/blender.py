@@ -195,18 +195,22 @@ class Blender:
 
         return blend
 
-    def plot_data(self, idx: int) -> None:
+    def plot_galaxy(self, idx: int) -> None:
         import matplotlib.pyplot as plt
+        import astropy.visualization as viz
 
         title_list = [
             "Galaxy stamp",
             "CANDELS segmentation map",
             "Cleaned segmentation map"
         ]
-
+        img = self.data[idx]
+        norm = viz.ImageNormalize(img,
+                                  interval=viz.MinMaxInterval(),
+                                  stretch=viz.SqrtStretch())
         fig, axes = plt.subplots(1, 3, figsize=(12, 8), tight_layout=True)
 
-        axes[0].imshow(self.data[idx], origin="lower")
+        axes[0].imshow(img, origin="lower")
         axes[1].imshow(normalize_segmap(self.seg[idx]), origin="lower")
         axes[2].imshow(self.clean_seg(idx), origin="lower")
 
@@ -214,17 +218,15 @@ class Blender:
             ax.set_axis_off()
             ax.set_title(title)
 
-        return fig
-
-    def plot_blend(self, idx1: int, idx2: int):
+    def plot_blend(self, idx1: int, idx2: int, masked: bool = True):
         import matplotlib.pyplot as plt
         import astropy.visualization as viz
 
         g1 = self.galaxy(idx1)
         g2 = self.galaxy(idx2)
-        blend = self.blend(g1, g2)
+        blend = self.blend(g1, g2, masked=masked)
         imglist = [
-            blend.img,
+            blend.img.sum(axis=-1),
             blend.segmap[0],
             blend.segmap[1],
             blend.segmap.sum(axis=0)]
@@ -244,5 +246,3 @@ class Blender:
                 axes[i].imshow(image, origin="lower")
             axes[i].set_axis_off()
             axes[i].set_title(titlelist[i])
-
-        return fig
