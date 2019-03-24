@@ -21,6 +21,8 @@ Context
 
 #### Input dataset
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2604740.svg)](https://doi.org/10.5281/zenodo.2604740)
+
 The provided input dataset comes from the CANDELS bulge/disk decomposition dataset from [Dimauro et al. (2018)](https://academic.oup.com/mnras/article-abstract/478/4/5410/5004864?redirectedFrom=fulltext) and contains stamps and segmentation maps (128 x 128 pixels) centred around isolated galaxies, and a reduced catalogue of properties in the F160W band for the central galaxies.
 
 Our addition to the Dimauro dataset is a visual screening of the stamps to reject all those for which

@@ -18,10 +18,10 @@ except ImportError:
 
 import click
 
-URL = "https://www.apc.univ-paris7.fr/Downloads/comput/aboucaud"
-FOLDER = "deblending"
+ZENODO_URL = "https://zenodo.org/record"
+RECORD_NUMBER = 2604740
 FILES = [
-    "candels-data.tar.gz",
+    "candels-blender-data.tar.gz",
 ]
 
 
@@ -34,9 +34,14 @@ FILES = [
     show_default=True,
     help="Destination directory to download the data, will be created if not existing"
 )
-def main(output_dir):
+@click.option(
+    "--delete",
+    is_flag=True,
+    help="Delete archives once extracted"
+)
+def main(output_dir, delete):
     urls = [
-        f"{URL}/{FOLDER}/{filename}"
+        f"{ZENODO_URL}/{RECORD_NUMBER}/files/{filename}"
         for filename in FILES
     ]
 
@@ -51,15 +56,19 @@ def main(output_dir):
             click.echo(f"{filename} already downloaded.")
             continue
 
-        click.echo("Downloading from {url} ...")
+        click.echo(f"Downloading from {url} ...")
         urlretrieve(url, filename=output_file)
-        click.echo("=> File saved as {output_file}")
+        click.echo(f"=> File saved as {output_file}")
 
         if filename.endswith("tar.gz"):
             click.echo("Extracting tarball..")
             with tarfile.open(output_file, "r:gz") as f:
                 f.extractall(output_dir)
             click.echo("Done.")
+
+            if delete:
+                os.remove(output_file)
+                click.echo(f"=> File {output_file} removed.")
 
 
 if __name__ == '__main__':
