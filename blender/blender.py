@@ -207,7 +207,7 @@ class Blender:
         img = self.data[idx]
         norm = viz.ImageNormalize(img,
                                   interval=viz.MinMaxInterval(),
-                                  stretch=viz.SqrtStretch())
+                                  stretch=viz.AsinhStretch())
         fig, axes = plt.subplots(1, 3, figsize=(12, 8), tight_layout=True)
 
         axes[0].imshow(img, origin="lower")
@@ -237,7 +237,7 @@ class Blender:
             f"blend segmap {g1.cat_id} - {g2.cat_id}"]
         norm = viz.ImageNormalize(blend.img,
                                   interval=viz.MinMaxInterval(),
-                                  stretch=viz.SqrtStretch())
+                                  stretch=viz.AsinhStretch())
         fig, axes = plt.subplots(1, 4, figsize=(16, 8), tight_layout=True)
         for i, image in enumerate(imglist):
             if i == 0:
