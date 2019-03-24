@@ -180,7 +180,7 @@ def main(n_blends, excluded_type, mag_low, mag_high, mag_diff, rad_diff,
 
     # Apply cuts to the galaxy catalog
     if use_clean_galaxies:
-        blender.make_cut(blender.cat.clean)
+        blender.make_cut(blender.cat.clean_flag)
     click.echo(
         f"Selecting galaxies in the magnitude range {mag_low} < m < {mag_high}"
     )
