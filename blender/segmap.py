@@ -48,7 +48,7 @@ def mask_out_pixels(img: Stamp, segmap: Stamp, segval: Stamp,
         masked_img[sources_except_central] = random_background_pixels
     else:
         # Create a realisation of the background for the std value
-        background_std = np.std(img[background_mask])
+        background_std = np.std(img * background_mask)
         random_background = np.random.normal(scale=background_std, size=img.shape)
         masked_img[sources_except_central] = random_background[sources_except_central]
         masked_img += noise_factor * np.random.normal(scale=background_std, size=img.shape)
