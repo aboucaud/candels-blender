@@ -3,6 +3,11 @@ CANDELS galaxy blender
 
 Easily generate images of galaxy blends from Hubble Space Telescope data.
 
+<img src="img/blends_2-5_transparent.png" width=800>
+
+
+Table of contents
+-----------------
 - [Context](#Context)
 - [Usage](#Usage)
 - [Installation](#Install)
@@ -11,7 +16,10 @@ Easily generate images of galaxy blends from Hubble Space Telescope data.
 Context
 -------
 
-#### Dataset
+#### Galaxy blending
+
+
+#### Input dataset
 
 The provided input dataset comes from the CANDELS bulge/disk decomposition dataset from [Dimauro et al. (2018)](https://academic.oup.com/mnras/article-abstract/478/4/5410/5004864?redirectedFrom=fulltext) and contains stamps and segmentation maps (128 x 128 pixels) centred around isolated galaxies, and a reduced catalogue of properties in the F160W band for the central galaxies.
 
@@ -58,8 +66,8 @@ The individual galaxies stamps - with the one centered and the one shifted - can
 
 Finally we use the magnitude of both galaxies from catalogue to output their flux in an array for regression tasks.
 
-Install
--------
+Installation
+------------
 
 1. Clone the repository
    ```bash
@@ -89,13 +97,13 @@ Install
 Example
 -------
 
-The three available actions are to be used sequentially.
+The actions are to be used sequentially.
 
 ### 1) Create the blends and catalogue
 ```bash
-candels-blender produce -n 20000 --exclude irr --mag_high 23.5 --test_ratio 0.2 --seed 42
+candels-blender produce -n 20000 --exclude irr --mag_high 23.5 --test_ratio 0.3 --seed 42
 ```
-will prepare 20 000 pairs of galaxies of magnitude above 23.5 excluding the irregular galaxies, with a train/test ratio of 70/30 %, into a directory called `output-s_42-n_20000` along with the accompanying segmentation masks and catalogues `train/test_catalogue.csv`.
+will prepare 20 000 pairs of galaxies of magnitude above 23.5 excluding the irregular galaxies, with a train/test ratio of 70% / 30%, into a directory called `output-s_42-n_20000` along with the accompanying segmentation masks and catalogues `train/test_catalogue.csv`.
 
 ### 2) Format the images and masks into distinct files
 ```bash
@@ -117,4 +125,4 @@ A notebook that briefly describes the blending process is available [here](noteb
 
 ## Authors
 
-Alexandre Boucaud - _aboucaud_ at _apc_ dot _in2p3.fr_
+Alexandre Boucaud - aboucaud _at_ apc.in2p3.fr
