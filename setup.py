@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="candels-blender",
-    version="0.1.0",
+    version="0.1.1",
     description="Create galaxy blends from CANDELS galaxies images.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
