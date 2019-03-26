@@ -154,8 +154,9 @@ class Blender:
         "Pick a random pair of galaxies with specific flux constrains"
         gal1 = self.random_galaxy(from_test)
         gal2 = self.random_galaxy(from_test)
+
         while not np.abs(gal1.mag - gal2.mag) < self.magdiff:
-            gal2 = self.random_galaxy()
+            gal2 = self.random_galaxy(from_test)
 
         return gal1, gal2
 
