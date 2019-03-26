@@ -6,6 +6,7 @@ dependencies:
   - scipy
   - numpy
   - pandas
+  - jupyter
   - matplotlib
   - click
   - astropy
