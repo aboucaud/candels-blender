@@ -91,7 +91,7 @@ Installation
    python3 -m pip install .
    ```
 
-3. Download the CANDELS data
+3. Download the CANDELS data (120Mb)
    ```bash
    python3 download_data.py
    ```
