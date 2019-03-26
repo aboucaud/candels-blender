@@ -4,12 +4,12 @@ from pathlib import Path
 
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
-from numpy import ndarray as Stamp  # pragma: no cover
 from numpy.random import RandomState
 
 from blender.core import Galaxy, Blend, Stamp
 from blender.segmap import normalize_segmap
 from blender.segmap import mask_out_pixels
+from blender.visualisation import asin_stretch_norm
 
 PathType = Union[Path, str]
 
@@ -187,41 +187,41 @@ class Blender:
 
         try:
             blend = self.blend(gal1, gal2, masked=masked)
-        except BlendShiftError:
+        except BlendShiftError as e:
             logger = logging.getLogger(__name__)
             logger.info(
                 f"Issue while blending galaxies {gal1.gal_id} and "
-                f"{gal2.gal_id}")
+                f"{gal2.gal_id}: {e}")
             return None
 
         return blend
 
     def plot_galaxy(self, idx: int) -> None:
         import matplotlib.pyplot as plt
-        import astropy.visualization as viz
 
         title_list = [
             "Galaxy stamp",
             "CANDELS segmentation map",
+            "Cleaned galaxy stamp",
             "Cleaned segmentation map"
         ]
         img = self.data[idx]
-        norm = viz.ImageNormalize(img,
-                                  interval=viz.MinMaxInterval(),
-                                  stretch=viz.AsinhStretch())
-        fig, axes = plt.subplots(1, 3, figsize=(12, 8), tight_layout=True)
+        seg = normalize_segmap(self.seg[idx])
+        masked_img, masked_seg = self.masked_stamp(idx)
 
-        axes[0].imshow(img, origin="lower")
-        axes[1].imshow(normalize_segmap(self.seg[idx]), origin="lower")
-        axes[2].imshow(self.clean_seg(idx), origin="lower")
+        fig, axes = plt.subplots(2, 2, figsize=(12, 12), tight_layout=True)
 
-        for ax, title in zip(axes, title_list):
+        axes[0, 0].imshow(img, norm=asin_stretch_norm(img))
+        axes[0, 1].imshow(seg)
+        axes[1, 0].imshow(masked_img, norm=asin_stretch_norm(masked_img))
+        axes[1, 1].imshow(masked_seg)
+
+        for ax, title in zip(axes.flatten(), title_list):
             ax.set_axis_off()
             ax.set_title(title)
 
     def plot_blend(self, idx1: int, idx2: int, masked: bool = True):
         import matplotlib.pyplot as plt
-        import astropy.visualization as viz
 
         g1 = self.galaxy(idx1)
         g2 = self.galaxy(idx2)
@@ -236,13 +236,11 @@ class Blender:
             f"{g1.type} - mag:{g1.mag:.2f} - rad:{g1.rad:.2f}",
             f"{g2.type} - mag:{g2.mag:.2f} - rad:{g2.rad:.2f}",
             f"blend segmap {g1.cat_id} - {g2.cat_id}"]
-        norm = viz.ImageNormalize(blend.img,
-                                  interval=viz.MinMaxInterval(),
-                                  stretch=viz.AsinhStretch())
+
         fig, axes = plt.subplots(1, 4, figsize=(16, 8), tight_layout=True)
         for i, image in enumerate(imglist):
             if i == 0:
-                axes[i].imshow(image, origin="lower", norm=norm)
+                axes[i].imshow(image, origin="lower", norm=asin_stretch_norm(image))
             else:
                 axes[i].imshow(image, origin="lower")
             axes[i].set_axis_off()
