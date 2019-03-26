@@ -7,7 +7,7 @@ import pandas as pd  # type: ignore
 from numpy import ndarray as Stamp  # pragma: no cover
 from numpy.random import RandomState
 
-from blender.core import Galaxy, Blend
+from blender.core import Galaxy, Blend, Stamp
 from blender.segmap import normalize_segmap
 from blender.segmap import mask_out_pixels
 

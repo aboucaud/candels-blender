@@ -1,6 +1,7 @@
 import numpy as np  # type: ignore
-from numpy import ndarray as Stamp  # pragma: no cover
 from scipy.ndimage import binary_dilation  # type: ignore
+
+from blender.core import Stamp
 
 
 def normalize_segmap(segmap: Stamp) -> Stamp:

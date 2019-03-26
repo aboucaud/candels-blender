@@ -1,6 +1,6 @@
 from typing import List, NamedTuple
 
-import numpy as np  # type: ignore
+from numpy import ndarray as Stamp  # pragma: no cover
 
 
 Galaxy = NamedTuple(
@@ -18,8 +18,8 @@ Galaxy = NamedTuple(
 Blend = NamedTuple(
     "Blend",
     [
-        ("img", np.ndarray),
-        ("segmap", np.ndarray),
+        ("img", Stamp),
+        ("segmap", Stamp),
         ("gal1", Galaxy),
         ("gal2", Galaxy),
         ("shift", List[int]),
