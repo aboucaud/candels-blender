@@ -1,6 +1,7 @@
 import csv
 import logging
 from pathlib import Path
+from typing import Union
 
 import click
 import numpy as np
@@ -9,7 +10,7 @@ from blender import Blender, Blend
 from blender.catalog import blend2cat, CATALOG_HEADER
 
 
-def save_img(blend: Blend, idx: int, prefix: str, outdir: str = ".") -> None:
+def save_img(blend: Blend, idx: int, prefix: str, outdir: Union[Path, str] = ".") -> None:
     np.save(f"{outdir}/{prefix}_blend_{idx:06d}.npy", blend.img)
     np.save(f"{outdir}/{prefix}_blend_seg_{idx:06d}.npy", blend.segmap)
 

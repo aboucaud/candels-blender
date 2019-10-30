@@ -207,7 +207,7 @@ class Blender:
         ]
         img = self.data[idx]
         seg = normalize_segmap(self.seg[idx])
-        masked_img, masked_seg = self.masked_stamp(idx)
+        masked_img, masked_seg = self.masked_stamp(self.galaxy(idx))
 
         fig, axes = plt.subplots(2, 2, figsize=(12, 12), tight_layout=True)
 
