@@ -36,8 +36,6 @@ def mask_out_pixels(img: Stamp, segmap: Stamp, segval: Stamp,
     # Compute the binary mask of all sources BUT the central galaxy
     sources_except_central = np.logical_xor(sources, central_source)
 
-    centralseg = binary_dilation(np.where(segmap == segval, 1, 0),
-                                 iterations=n_iter)
     if shuffle:
         # Select random pixels from the noise in the image
         n_pixels_to_fill_in = sources_except_central.sum()
